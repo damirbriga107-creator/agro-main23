@@ -1,0 +1,413 @@
+version: '3.8'
+
+services:
+  # Databases
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: daorsagro
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_MULTIPLE_DATABASES: auth_db,financial_db,farm_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh
+    networks:
+      - daorsagro-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:7.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: daorsagro
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./infrastructure/docker/mongodb/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - daorsagro-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - daorsagro-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Message Queue
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    networks:
+      - daorsagro-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - daorsagro-network
+
+  # ClickHouse for Analytics
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      CLICKHOUSE_DB: daorsagro
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    networks:
+      - daorsagro-network
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Search Engine
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - daorsagro-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: backend/api-gateway/Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      NODE_ENV: production
+      PORT: 80
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      REDIS_URL: redis://redis:6379
+      AUTH_SERVICE_URL: http://auth-service:3001
+      FINANCIAL_SERVICE_URL: http://financial-service:3002
+      SUBSIDY_SERVICE_URL: http://subsidy-service:3003
+      INSURANCE_SERVICE_URL: http://insurance-service:3004
+      ANALYTICS_SERVICE_URL: http://analytics-service:3005
+      DOCUMENT_SERVICE_URL: http://document-service:3006
+      NOTIFICATION_SERVICE_URL: http://notification-service:3007
+      IOT_SERVICE_URL: http://iot-service:3008
+    depends_on:
+      - redis
+      - postgres
+      - mongodb
+    networks:
+      - daorsagro-network
+    volumes:
+      - ./backend/api-gateway:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  # Microservices
+  auth-service:
+    build:
+      context: .
+      dockerfile: backend/services/auth-service/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/auth_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - daorsagro-network
+    volumes:
+      - ./backend/services/auth-service:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  financial-service:
+    build:
+      context: .
+      dockerfile: backend/services/financial-service/Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/financial_db
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:9092
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+      - elasticsearch
+    networks:
+      - daorsagro-network
+    volumes:
+      - ./backend/services/financial-service:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  subsidy-service:
+    build:
+      context: .
+      dockerfile: backend/services/subsidy-service/Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      MONGODB_URL: mongodb://mongo:${MONGO_PASSWORD}@mongodb:27017/daorsagro?authSource=admin
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:9092
+    depends_on:
+      - mongodb
+      - redis
+      - kafka
+    networks:
+      - daorsagro-network
+    volumes:
+      - ./backend/services/subsidy-service:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  insurance-service:
+    build:
+      context: .
+      dockerfile: backend/services/insurance-service/Dockerfile
+    ports:
+      - "3004:3004"
+    environment:
+      NODE_ENV: production
+      PORT: 3004
+      MONGODB_URL: mongodb://mongo:${MONGO_PASSWORD}@mongodb:27017/daorsagro?authSource=admin
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:9092
+    depends_on:
+      - mongodb
+      - redis
+      - kafka
+    networks:
+      - daorsagro-network
+    volumes:
+      - ./backend/services/insurance-service:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  analytics-service:
+    build:
+      context: .
+      dockerfile: backend/services/analytics-service/Dockerfile
+    ports:
+      - "3005:3005"
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+      CLICKHOUSE_URL: http://clickhouse:8123
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:9092
+    depends_on:
+      - clickhouse
+      - redis
+      - kafka
+    networks:
+      - daorsagro-network
+    volumes:
+      - ./backend/services/analytics-service:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  document-service:
+    build:
+      context: .
+      dockerfile: backend/services/document-service/Dockerfile
+    ports:
+      - "3006:3006"
+    environment:
+      NODE_ENV: production
+      PORT: 3006
+      MONGODB_URL: mongodb://mongo:${MONGO_PASSWORD}@mongodb:27017/daorsagro?authSource=admin
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:9092
+    depends_on:
+      - mongodb
+      - redis
+      - kafka
+    networks:
+      - daorsagro-network
+    volumes:
+      - ./backend/services/document-service:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: backend/services/notification-service/Dockerfile
+    ports:
+      - "3007:3007"
+    environment:
+      NODE_ENV: production
+      PORT: 3007
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:9092
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+    depends_on:
+      - redis
+      - kafka
+    networks:
+      - daorsagro-network
+    volumes:
+      - ./backend/services/notification-service:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  iot-service:
+    build:
+      context: .
+      dockerfile: backend/services/iot-service/Dockerfile
+    ports:
+      - "3008:3008"
+    environment:
+      NODE_ENV: production
+      PORT: 3008
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/daorsagro
+      MONGODB_URL: mongodb://mongo:${MONGO_PASSWORD}@mongodb:27017/daorsagro?authSource=admin
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:9092
+      THINGSBOARD_URL: ${THINGSBOARD_URL}
+      THINGSBOARD_USERNAME: ${THINGSBOARD_USERNAME}
+      THINGSBOARD_PASSWORD: ${THINGSBOARD_PASSWORD}
+    depends_on:
+      - postgres
+      - mongodb
+      - redis
+      - kafka
+    networks:
+      - daorsagro-network
+    volumes:
+      - ./backend/services/iot-service:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  # Frontend Applications
+  web-app:
+    build:
+      context: .
+      dockerfile: frontend/packages/web-app/Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      NODE_ENV: production
+      VITE_API_URL: http://api-gateway:80
+      VITE_APP_NAME: DaorsAgro
+      VITE_APP_VERSION: 1.0.0
+    depends_on:
+      - api-gateway
+    networks:
+      - daorsagro-network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+  # Monitoring and Observability
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - daorsagro-network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./infrastructure/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - daorsagro-network
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+  clickhouse_data:
+  elasticsearch_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  daorsagro-network:
+    driver: bridge
