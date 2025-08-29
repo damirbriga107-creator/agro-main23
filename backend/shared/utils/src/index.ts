@@ -6,6 +6,10 @@ import { isNull, isUndefined, isEmpty } from 'lodash';
 
 import { TokenPayload, UserRole } from '@daorsagro/types';
 
+// Export new utility modules
+export * from './service-utils';
+export * from './middleware';
+
 /**
  * Password utility functions
  */

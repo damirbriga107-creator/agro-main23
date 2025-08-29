@@ -211,37 +211,50 @@ class ApiGateway {
       auth: {
         target: EnvironmentUtils.get('AUTH_SERVICE_URL', 'http://localhost:3001'),
         pathRewrite: { '^/api/v1/auth': '' },
-        paths: ['/api/v1/auth', '/api/v1/users']
+        paths: ['/api/v1/auth', '/api/v1/users'],
+        publicPaths: ['/api/v1/auth/login', '/api/v1/auth/register', '/api/v1/auth/forgot-password']
       },
       financial: {
         target: EnvironmentUtils.get('FINANCIAL_SERVICE_URL', 'http://localhost:3002'),
         pathRewrite: { '^/api/v1/financial': '' },
-        paths: ['/api/v1/financial']
+        paths: ['/api/v1/financial', '/api/v1/budgets', '/api/v1/transactions', '/api/v1/categories', '/api/v1/reports'],
+        publicPaths: []
       },
       subsidies: {
         target: EnvironmentUtils.get('SUBSIDY_SERVICE_URL', 'http://localhost:3003'),
         pathRewrite: { '^/api/v1/subsidies': '' },
-        paths: ['/api/v1/subsidies']
+        paths: ['/api/v1/subsidies', '/api/v1/subsidy-applications', '/api/v1/subsidy-programs'],
+        publicPaths: ['/api/v1/subsidies/programs'] // Public program listing
       },
       insurance: {
         target: EnvironmentUtils.get('INSURANCE_SERVICE_URL', 'http://localhost:3004'),
         pathRewrite: { '^/api/v1/insurance': '' },
-        paths: ['/api/v1/insurance']
+        paths: ['/api/v1/insurance', '/api/v1/policies', '/api/v1/claims'],
+        publicPaths: ['/api/v1/insurance/products'] // Public insurance products
       },
       analytics: {
         target: EnvironmentUtils.get('ANALYTICS_SERVICE_URL', 'http://localhost:3005'),
         pathRewrite: { '^/api/v1/analytics': '' },
-        paths: ['/api/v1/analytics']
+        paths: ['/api/v1/analytics', '/api/v1/dashboards', '/api/v1/reports/analytics'],
+        publicPaths: []
       },
       documents: {
         target: EnvironmentUtils.get('DOCUMENT_SERVICE_URL', 'http://localhost:3006'),
         pathRewrite: { '^/api/v1/documents': '' },
-        paths: ['/api/v1/documents']
+        paths: ['/api/v1/documents', '/api/v1/uploads', '/api/v1/files'],
+        publicPaths: []
       },
       notifications: {
         target: EnvironmentUtils.get('NOTIFICATION_SERVICE_URL', 'http://localhost:3007'),
         pathRewrite: { '^/api/v1/notifications': '' },
-        paths: ['/api/v1/notifications']
+        paths: ['/api/v1/notifications', '/api/v1/alerts'],
+        publicPaths: []
+      },
+      iot: {
+        target: EnvironmentUtils.get('IOT_SERVICE_URL', 'http://localhost:3008'),
+        pathRewrite: { '^/api/v1/iot': '' },
+        paths: ['/api/v1/iot', '/api/v1/sensors', '/api/v1/devices'],
+        publicPaths: []
       }
     };
 
@@ -253,43 +266,103 @@ class ApiGateway {
         timeout: 30000,
         proxyTimeout: 30000,
         onError: (err, req, res) => {
-          this.logger.error(`Proxy error for ${serviceName}:`, err);
-          res.status(503).json({
-            error: {
-              code: 'SERVICE_UNAVAILABLE',
-              message: `${serviceName} service is currently unavailable`,
-              service: serviceName,
-              timestamp: new Date().toISOString()
-            }
+          this.logger.error(`Proxy error for ${serviceName}:`, err, {
+            requestId: req.headers['x-request-id'],
+            url: req.url,
+            method: req.method
           });
+          
+          if (!res.headersSent) {
+            res.status(503).json({
+              error: {
+                code: 'SERVICE_UNAVAILABLE',
+                message: `${serviceName} service is currently unavailable`,
+                service: serviceName,
+                timestamp: new Date().toISOString(),
+                requestId: req.headers['x-request-id']
+              }
+            });
+          }
         },
         onProxyReq: (proxyReq, req) => {
           // Add request headers
           proxyReq.setHeader('X-Forwarded-For', req.ip);
           proxyReq.setHeader('X-Gateway-Version', this.config.version);
+          proxyReq.setHeader('X-Request-ID', req.headers['x-request-id'] as string);
           
           // Forward authentication token
           if (req.headers.authorization) {
             proxyReq.setHeader('Authorization', req.headers.authorization);
           }
+
+          // Forward user context if available
+          if (req.user) {
+            proxyReq.setHeader('X-User-ID', req.user.userId);
+            proxyReq.setHeader('X-User-Role', req.user.role);
+          }
+
+          this.logger.debug(`Proxying request to ${serviceName}:`, {
+            requestId: req.headers['x-request-id'],
+            method: req.method,
+            originalUrl: req.originalUrl,
+            target: config.target
+          });
         },
         onProxyRes: (proxyRes, req, res) => {
-          // Add service identification header
+          // Add service identification headers
           proxyRes.headers['X-Service-Name'] = serviceName;
+          proxyRes.headers['X-Gateway-Version'] = this.config.version;
           
           // Record service response metrics
-          this.metricsService.recordServiceResponse(serviceName, proxyRes.statusCode || 0);
+          const startTime = Date.now();
+          const duration = startTime - (req.startTime || startTime);
+          this.metricsService.recordServiceResponse(serviceName, proxyRes.statusCode || 0, duration);
+
+          this.logger.debug(`Received response from ${serviceName}:`, {
+            requestId: req.headers['x-request-id'],
+            statusCode: proxyRes.statusCode,
+            duration: `${duration}ms`
+          });
         }
       });
 
-      // Apply authentication middleware to protected routes
+      // Apply routing with proper authentication
       config.paths.forEach(path => {
-        if (path.includes('/auth/login') || path.includes('/auth/register')) {
-          // Public auth endpoints
+        const isPublicPath = config.publicPaths.some(publicPath => 
+          path.startsWith(publicPath.split('*')[0])
+        );
+
+        if (isPublicPath) {
+          // Public endpoints - no authentication required
           this.app.use(path, proxy);
         } else {
-          // Protected endpoints
+          // Protected endpoints - require authentication
           this.app.use(path, AuthMiddleware.authenticate, proxy);
+        }
+      });
+
+      // Setup specific public routes that don't require auth
+      config.publicPaths.forEach(publicPath => {
+        this.app.use(publicPath, proxy);
+      });
+    });
+
+    // Add API service discovery endpoint
+    this.app.get('/api/services', (req, res) => {
+      const serviceList = Object.entries(services).map(([name, config]) => ({
+        name,
+        target: config.target,
+        paths: config.paths,
+        publicPaths: config.publicPaths,
+        status: 'unknown' // This would be determined by health checks
+      }));
+
+      res.json({
+        services: serviceList,
+        timestamp: new Date().toISOString(),
+        gateway: {
+          version: this.config.version,
+          environment: this.config.environment
         }
       });
     });
