@@ -137,6 +137,10 @@ services:
       FINANCIAL_SERVICE_URL: http://financial-service:3002
       SUBSIDY_SERVICE_URL: http://subsidy-service:3003
       INSURANCE_SERVICE_URL: http://insurance-service:3004
+      ANALYTICS_SERVICE_URL: http://analytics-service:3005
+      DOCUMENT_SERVICE_URL: http://document-service:3006
+      NOTIFICATION_SERVICE_URL: http://notification-service:3007
+      IOT_SERVICE_URL: http://iot-service:3008
     depends_on:
       - redis
       - postgres
@@ -304,6 +308,33 @@ services:
       - daorsagro-network
     volumes:
       - ./backend/services/notification-service:/app
+      - /app/node_modules
+
+  iot-service:
+    build:
+      context: .
+      dockerfile: backend/services/iot-service/Dockerfile
+    ports:
+      - "3008:3008"
+    environment:
+      NODE_ENV: development
+      PORT: 3008
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/daorsagro
+      MONGODB_URL: mongodb://mongo:mongo123@mongodb:27017/daorsagro?authSource=admin
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:9092
+      THINGSBOARD_URL: http://thingsboard:8080
+      THINGSBOARD_USERNAME: tenant@thingsboard.org
+      THINGSBOARD_PASSWORD: tenant
+    depends_on:
+      - postgres
+      - mongodb
+      - redis
+      - kafka
+    networks:
+      - daorsagro-network
+    volumes:
+      - ./backend/services/iot-service:/app
       - /app/node_modules
 
   # Frontend Applications
