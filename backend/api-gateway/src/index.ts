@@ -17,6 +17,7 @@ import { ValidationMiddleware } from './middleware/validation.middleware';
 import { ErrorHandlerMiddleware } from './middleware/error-handler.middleware';
 import { HealthCheckService } from './services/health-check.service';
 import { MetricsService } from './services/metrics.service';
+import { ServiceDiscoveryService } from './services/service-discovery.service';
 import { setupSwagger } from './utils/swagger';
 
 /**
@@ -28,6 +29,7 @@ class ApiGateway {
   private config: any;
   private healthCheckService: HealthCheckService;
   private metricsService: MetricsService;
+  private serviceDiscovery: ServiceDiscoveryService;
 
   constructor() {
     this.app = express();
@@ -35,6 +37,7 @@ class ApiGateway {
     this.config = ServiceConfigFactory.create('api-gateway', 3000);
     this.healthCheckService = new HealthCheckService();
     this.metricsService = new MetricsService();
+    this.serviceDiscovery = new ServiceDiscoveryService();
     
     this.setupMiddleware();
     this.setupRoutes();
@@ -210,50 +213,50 @@ class ApiGateway {
     const services = {
       auth: {
         target: EnvironmentUtils.get('AUTH_SERVICE_URL', 'http://localhost:3001'),
-        pathRewrite: { '^/api/v1/auth': '' },
+        pathRewrite: { '^/api/v1/auth': '/api/v1/auth', '^/api/v1/users': '/api/v1/users' },
         paths: ['/api/v1/auth', '/api/v1/users'],
-        publicPaths: ['/api/v1/auth/login', '/api/v1/auth/register', '/api/v1/auth/forgot-password']
+        publicPaths: ['/api/v1/auth/login', '/api/v1/auth/register', '/api/v1/auth/forgot-password', '/api/v1/auth/reset-password']
       },
       financial: {
         target: EnvironmentUtils.get('FINANCIAL_SERVICE_URL', 'http://localhost:3002'),
-        pathRewrite: { '^/api/v1/financial': '' },
-        paths: ['/api/v1/financial', '/api/v1/budgets', '/api/v1/transactions', '/api/v1/categories', '/api/v1/reports'],
+        pathRewrite: { '^/api/v1/financial': '/api/v1/financial' },
+        paths: ['/api/v1/financial'],
         publicPaths: []
       },
       subsidies: {
         target: EnvironmentUtils.get('SUBSIDY_SERVICE_URL', 'http://localhost:3003'),
-        pathRewrite: { '^/api/v1/subsidies': '' },
-        paths: ['/api/v1/subsidies', '/api/v1/subsidy-applications', '/api/v1/subsidy-programs'],
+        pathRewrite: { '^/api/v1/subsidies': '/api/v1/subsidies' },
+        paths: ['/api/v1/subsidies'],
         publicPaths: ['/api/v1/subsidies/programs'] // Public program listing
       },
       insurance: {
         target: EnvironmentUtils.get('INSURANCE_SERVICE_URL', 'http://localhost:3004'),
-        pathRewrite: { '^/api/v1/insurance': '' },
-        paths: ['/api/v1/insurance', '/api/v1/policies', '/api/v1/claims'],
+        pathRewrite: { '^/api/v1/insurance': '/api/v1/insurance' },
+        paths: ['/api/v1/insurance'],
         publicPaths: ['/api/v1/insurance/products'] // Public insurance products
       },
       analytics: {
         target: EnvironmentUtils.get('ANALYTICS_SERVICE_URL', 'http://localhost:3005'),
-        pathRewrite: { '^/api/v1/analytics': '' },
-        paths: ['/api/v1/analytics', '/api/v1/dashboards', '/api/v1/reports/analytics'],
+        pathRewrite: { '^/api/v1/analytics': '/api/v1/analytics' },
+        paths: ['/api/v1/analytics'],
         publicPaths: []
       },
       documents: {
         target: EnvironmentUtils.get('DOCUMENT_SERVICE_URL', 'http://localhost:3006'),
-        pathRewrite: { '^/api/v1/documents': '' },
-        paths: ['/api/v1/documents', '/api/v1/uploads', '/api/v1/files'],
+        pathRewrite: { '^/api/v1/documents': '/api/v1/documents' },
+        paths: ['/api/v1/documents'],
         publicPaths: []
       },
       notifications: {
         target: EnvironmentUtils.get('NOTIFICATION_SERVICE_URL', 'http://localhost:3007'),
-        pathRewrite: { '^/api/v1/notifications': '' },
-        paths: ['/api/v1/notifications', '/api/v1/alerts'],
+        pathRewrite: { '^/api/v1/notifications': '/api/v1/notifications' },
+        paths: ['/api/v1/notifications'],
         publicPaths: []
       },
       iot: {
         target: EnvironmentUtils.get('IOT_SERVICE_URL', 'http://localhost:3008'),
-        pathRewrite: { '^/api/v1/iot': '' },
-        paths: ['/api/v1/iot', '/api/v1/sensors', '/api/v1/devices'],
+        pathRewrite: { '^/api/v1/iot': '/api/v1/iot' },
+        paths: ['/api/v1/iot'],
         publicPaths: []
       }
     };
@@ -266,6 +269,9 @@ class ApiGateway {
         timeout: 30000,
         proxyTimeout: 30000,
         onError: (err, req, res) => {
+          // Record service failure
+          this.serviceDiscovery.recordServiceCall(serviceName, false);
+          
           this.logger.error(`Proxy error for ${serviceName}:`, err, {
             requestId: req.headers['x-request-id'],
             url: req.url,
@@ -296,9 +302,9 @@ class ApiGateway {
           }
 
           // Forward user context if available
-          if (req.user) {
-            proxyReq.setHeader('X-User-ID', req.user.userId);
-            proxyReq.setHeader('X-User-Role', req.user.role);
+          if ((req as any).user) {
+            proxyReq.setHeader('X-User-ID', (req as any).user.userId);
+            proxyReq.setHeader('X-User-Role', (req as any).user.role);
           }
 
           this.logger.debug(`Proxying request to ${serviceName}:`, {
@@ -309,13 +315,15 @@ class ApiGateway {
           });
         },
         onProxyRes: (proxyRes, req, res) => {
+          // Record service response
+          const duration = Date.now() - ((req as any).startTime || Date.now());
+          this.serviceDiscovery.recordServiceCall(serviceName, proxyRes.statusCode < 400, duration);
+          
           // Add service identification headers
           proxyRes.headers['X-Service-Name'] = serviceName;
           proxyRes.headers['X-Gateway-Version'] = this.config.version;
           
           // Record service response metrics
-          const startTime = Date.now();
-          const duration = startTime - (req.startTime || startTime);
           this.metricsService.recordServiceResponse(serviceName, proxyRes.statusCode || 0, duration);
 
           this.logger.debug(`Received response from ${serviceName}:`, {
@@ -349,21 +357,42 @@ class ApiGateway {
 
     // Add API service discovery endpoint
     this.app.get('/api/services', (req, res) => {
-      const serviceList = Object.entries(services).map(([name, config]) => ({
-        name,
-        target: config.target,
-        paths: config.paths,
-        publicPaths: config.publicPaths,
-        status: 'unknown' // This would be determined by health checks
-      }));
-
+      const servicesStatus = this.serviceDiscovery.getServicesStatus();
+      const healthStats = this.serviceDiscovery.getHealthyServicesCount();
+      
       res.json({
-        services: serviceList,
+        services: servicesStatus,
+        summary: {
+          total: healthStats.total,
+          healthy: healthStats.healthy,
+          unhealthy: healthStats.total - healthStats.healthy
+        },
         timestamp: new Date().toISOString(),
         gateway: {
           version: this.config.version,
           environment: this.config.environment
         }
+      });
+    });
+
+    // Service-specific status endpoint
+    this.app.get('/api/services/:serviceName', (req, res) => {
+      const { serviceName } = req.params;
+      const serviceStats = this.serviceDiscovery.getServiceStats(serviceName);
+      
+      if (!serviceStats) {
+        return res.status(404).json({
+          error: {
+            code: 'SERVICE_NOT_FOUND',
+            message: `Service '${serviceName}' not found`,
+            timestamp: new Date().toISOString()
+          }
+        });
+      }
+      
+      res.json({
+        service: serviceStats,
+        timestamp: new Date().toISOString()
       });
     });
   }
@@ -401,6 +430,9 @@ class ApiGateway {
 
       // Start health check service
       await this.healthCheckService.start();
+      
+      // Start service discovery
+      this.serviceDiscovery.start();
 
       // Start the server
       const port = this.config.port;
