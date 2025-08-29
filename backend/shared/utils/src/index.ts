@@ -9,6 +9,8 @@ import { TokenPayload, UserRole } from '@daorsagro/types';
 // Export new utility modules
 export * from './service-utils';
 export * from './middleware';
+export * from './database-connections';
+export * from './logger';
 
 /**
  * Password utility functions
