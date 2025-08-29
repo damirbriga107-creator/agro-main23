@@ -81,6 +81,26 @@ services:
     networks:
       - daorsagro-network
 
+  # ClickHouse for Analytics
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      CLICKHOUSE_DB: daorsagro
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: clickhouse123
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    networks:
+      - daorsagro-network
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
   # Search Engine
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
@@ -218,6 +238,74 @@ services:
       - ./backend/services/insurance-service:/app
       - /app/node_modules
 
+  analytics-service:
+    build:
+      context: .
+      dockerfile: backend/services/analytics-service/Dockerfile
+    ports:
+      - "3005:3005"
+    environment:
+      NODE_ENV: development
+      PORT: 3005
+      CLICKHOUSE_URL: http://clickhouse:8123
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:9092
+    depends_on:
+      - clickhouse
+      - redis
+      - kafka
+    networks:
+      - daorsagro-network
+    volumes:
+      - ./backend/services/analytics-service:/app
+      - /app/node_modules
+
+  document-service:
+    build:
+      context: .
+      dockerfile: backend/services/document-service/Dockerfile
+    ports:
+      - "3006:3006"
+    environment:
+      NODE_ENV: development
+      PORT: 3006
+      MONGODB_URL: mongodb://mongo:mongo123@mongodb:27017/daorsagro?authSource=admin
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:9092
+    depends_on:
+      - mongodb
+      - redis
+      - kafka
+    networks:
+      - daorsagro-network
+    volumes:
+      - ./backend/services/document-service:/app
+      - /app/node_modules
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: backend/services/notification-service/Dockerfile
+    ports:
+      - "3007:3007"
+    environment:
+      NODE_ENV: development
+      PORT: 3007
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKERS: kafka:9092
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USER: your-email@gmail.com
+      SMTP_PASS: your-app-password
+    depends_on:
+      - redis
+      - kafka
+    networks:
+      - daorsagro-network
+    volumes:
+      - ./backend/services/notification-service:/app
+      - /app/node_modules
+
   # Frontend Applications
   web-app:
     build:
@@ -274,6 +362,7 @@ volumes:
   postgres_data:
   mongodb_data:
   redis_data:
+  clickhouse_data:
   elasticsearch_data:
   prometheus_data:
   grafana_data:
