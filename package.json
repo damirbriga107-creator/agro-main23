@@ -21,6 +21,11 @@
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:restart": "docker-compose restart",
+    "validate": "node scripts/validate-setup.js",
+    "health:check": "node scripts/health-check.js",
+    "setup:dev": "npm run validate && npm run docker:up && npm run health:check",
     "db:migrate": "npm run migrate --workspace=backend/shared/database",
     "db:seed": "npm run seed --workspace=backend/shared/database"
   },
