@@ -1,0 +1,57 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@daorsagro/shared/*": ["backend/shared/*/src"],
+      "@daorsagro/types": ["backend/shared/types/src"],
+      "@daorsagro/utils": ["backend/shared/utils/src"],
+      "@daorsagro/config": ["backend/shared/config/src"],
+      "@frontend/shared/*": ["frontend/packages/shared/*/src"],
+      "@frontend/components": ["frontend/packages/shared/components/src"],
+      "@frontend/hooks": ["frontend/packages/shared/hooks/src"],
+      "@frontend/types": ["frontend/packages/shared/types/src"]
+    }
+  },
+  "include": [
+    "backend/**/*",
+    "frontend/**/*",
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
+  ],
+  "ts-node": {
+    "esm": true,
+    "compilerOptions": {
+      "module": "ESNext"
+    }
+  }
+}
