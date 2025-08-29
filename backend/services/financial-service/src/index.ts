@@ -8,8 +8,8 @@ import { PrismaClient } from '@prisma/client';
 import { Kafka } from 'kafkajs';
 
 import { logger } from './utils/logger';
-import { errorHandler } from './middleware/error-handler.middleware';
-import { authMiddleware } from './middleware/auth.middleware';
+import { ErrorHandlerMiddleware } from './middleware/error-handler.middleware';
+import { AuthMiddleware } from './middleware/auth.middleware';
 import { validationMiddleware } from './middleware/validation.middleware';
 import transactionRoutes from './routes/transaction.routes';
 import budgetRoutes from './routes/budget.routes';
@@ -58,14 +58,14 @@ app.get('/health', (req, res) => {
 });
 
 // Routes with authentication
-app.use('/api/v1/financial', authMiddleware);
+app.use('/api/v1/financial', AuthMiddleware.authenticate);
 app.use('/api/v1/financial/transactions', transactionRoutes);
 app.use('/api/v1/financial/budgets', budgetRoutes);
 app.use('/api/v1/financial/reports', reportRoutes);
 app.use('/api/v1/financial/categories', categoryRoutes);
 
 // Error handling
-app.use(errorHandler);
+app.use(ErrorHandlerMiddleware.handle);
 
 // Graceful shutdown
 const gracefulShutdown = async (signal: string) => {

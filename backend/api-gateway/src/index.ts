@@ -461,6 +461,7 @@ class ApiGateway {
       
       try {
         await this.healthCheckService.stop();
+        this.serviceDiscovery.stop();
         this.logger.info('API Gateway shut down completed');
         process.exit(0);
       } catch (error) {
