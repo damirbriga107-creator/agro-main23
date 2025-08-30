@@ -231,14 +231,14 @@ export function setupUserRoutes(app: Express, dependencies: ServiceDependencies,
   // Get user activity logs (admin only)
   router.get(
     '/:id/activities',
-    // TODO: Add authentication middleware
-    // TODO: Add admin authorization middleware
+    AuthMiddleware.authenticate,
+    AuthMiddleware.requireRole([UserRole.ADMIN]),
     ValidationMiddleware.validate({ params: ValidationMiddleware.schemas.id }),
     ValidationMiddleware.validate(ValidationMiddleware.querySchemas.activityLogs),
     ErrorHandlerMiddleware.asyncHandler(async (req, res) => {
-      // TODO: Implement get user activities logic
       logger.info('Get user activities request', {
-        userId: req.params.id,
+        targetUserId: req.params.id,
+        requestingUserId: req.user?.userId,
         query: req.query,
         requestId: req.headers['x-request-id']
       });
@@ -248,32 +248,12 @@ export function setupUserRoutes(app: Express, dependencies: ServiceDependencies,
       res.json({
         success: true,
         data: {
-          activities: [
-            {
-              id: 'activity-1',
-              action: 'LOGIN',
-              resource: 'AUTH',
-              details: {
-                ip: '192.168.1.1',
-                userAgent: 'Mozilla/5.0...'
-              },
-              timestamp: new Date().toISOString()
-            },
-            {
-              id: 'activity-2',
-              action: 'PROFILE_UPDATE',
-              resource: 'USER',
-              details: {
-                fields: ['firstName', 'farmName']
-              },
-              timestamp: new Date(Date.now() - 3600000).toISOString()
-            }
-          ],
+          activities: [],
           pagination: {
             page: parseInt(page),
             limit: parseInt(limit),
-            total: 2,
-            totalPages: 1,
+            total: 0,
+            totalPages: 0,
             hasNext: false,
             hasPrev: false
           }
@@ -285,7 +265,7 @@ export function setupUserRoutes(app: Express, dependencies: ServiceDependencies,
   // Upload profile avatar
   router.post(
     '/profile/avatar',
-    // TODO: Add authentication middleware
+    AuthMiddleware.authenticate,
     // TODO: Add multer middleware for file upload
     ValidationMiddleware.validateFileUpload({
       maxSize: 5 * 1024 * 1024, // 5MB
@@ -293,16 +273,16 @@ export function setupUserRoutes(app: Express, dependencies: ServiceDependencies,
       required: true
     }),
     ErrorHandlerMiddleware.asyncHandler(async (req, res) => {
-      // TODO: Implement avatar upload logic
       logger.info('Avatar upload request', {
+        userId: req.user?.userId,
         requestId: req.headers['x-request-id']
       });
 
       res.json({
         success: true,
-        message: 'Avatar uploaded successfully',
+        message: 'Avatar upload functionality coming soon',
         data: {
-          avatarUrl: 'https://example.com/avatars/user-avatar.jpg' // TODO: Return actual URL
+          message: 'Feature under development'
         }
       });
     })
@@ -311,16 +291,16 @@ export function setupUserRoutes(app: Express, dependencies: ServiceDependencies,
   // Delete profile avatar
   router.delete(
     '/profile/avatar',
-    // TODO: Add authentication middleware
+    AuthMiddleware.authenticate,
     ErrorHandlerMiddleware.asyncHandler(async (req, res) => {
-      // TODO: Implement avatar deletion logic
       logger.info('Avatar deletion request', {
+        userId: req.user?.userId,
         requestId: req.headers['x-request-id']
       });
 
       res.json({
         success: true,
-        message: 'Avatar deleted successfully'
+        message: 'Avatar deletion functionality coming soon'
       });
     })
   );

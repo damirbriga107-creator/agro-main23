@@ -96,9 +96,15 @@ class ApiClient {
     // Request interceptor for adding auth token
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('accessToken');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+        // Get token from localStorage that was stored by AuthContext
+        const authTokens = localStorage.getItem('auth_tokens');
+        if (authTokens) {
+          try {
+            const tokens = JSON.parse(authTokens);
+            config.headers.Authorization = `Bearer ${tokens.accessToken}`;
+          } catch (error) {
+            console.warn('Failed to parse auth tokens:', error);
+          }
         }
         
         // Add request ID for tracing
@@ -143,27 +149,35 @@ class ApiClient {
   }
 
   private async refreshToken(): Promise<void> {
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (!refreshToken) {
+    const authTokens = localStorage.getItem('auth_tokens');
+    if (!authTokens) {
       throw new Error('No refresh token available');
     }
 
-    const response = await axios.post(`${this.baseURL}/api/v1/auth/refresh`, {
-      refreshToken,
-    });
+    try {
+      const tokens = JSON.parse(authTokens);
+      const response = await axios.post(`${this.baseURL}/api/v1/auth/refresh`, {
+        refreshToken: tokens.refreshToken,
+      });
 
-    if (response.data.success) {
-      localStorage.setItem('accessToken', response.data.data.accessToken);
-      localStorage.setItem('refreshToken', response.data.data.refreshToken);
-    } else {
+      if (response.data.success) {
+        const updatedTokens = {
+          ...tokens,
+          accessToken: response.data.data.accessToken,
+          expiresIn: response.data.data.expiresIn
+        };
+        localStorage.setItem('auth_tokens', JSON.stringify(updatedTokens));
+      } else {
+        throw new Error('Token refresh failed');
+      }
+    } catch (error) {
       throw new Error('Token refresh failed');
     }
   }
 
   private logout(): void {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
+    localStorage.removeItem('auth_tokens');
+    localStorage.removeItem('auth_user');
   }
 
   // Generic API methods
