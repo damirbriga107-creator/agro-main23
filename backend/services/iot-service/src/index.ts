@@ -158,6 +158,115 @@ app.get('/health', (req, res) => {
   });
 });
 
+// IoT devices endpoint for dashboard
+app.get('/api/v1/iot/devices', authMiddleware, async (req, res) => {
+  try {
+    const { limit = 10, status, type, farmId } = req.query;
+    const userId = (req as any).user?.userId;
+    
+    logger.info('IoT devices requested', {
+      requestId: req.headers['x-request-id'],
+      userId,
+      filters: { limit, status, type, farmId }
+    });
+
+    const iotService = new IoTService();
+    const devices = await iotService.getDevices({
+      limit: parseInt(limit as string),
+      status: status as string,
+      type: type as string,
+      farmId: farmId as string,
+      userId
+    });
+
+    res.json({
+      success: true,
+      data: devices,
+      timestamp: new Date().toISOString(),
+      requestId: req.headers['x-request-id']
+    });
+  } catch (error) {
+    logger.error('Failed to get IoT devices:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'IOT_DEVICES_ERROR',
+        message: 'Failed to retrieve IoT devices'
+      },
+      timestamp: new Date().toISOString(),
+      requestId: req.headers['x-request-id']
+    });
+  }
+});
+
+// IoT summary endpoint for dashboard
+app.get('/api/v1/iot/summary', authMiddleware, async (req, res) => {
+  try {
+    const userId = (req as any).user?.userId;
+    
+    const iotService = new IoTService();
+    const summary = await iotService.getDeviceSummary(userId);
+
+    res.json({
+      success: true,
+      data: summary,
+      timestamp: new Date().toISOString(),
+      requestId: req.headers['x-request-id']
+    });
+  } catch (error) {
+    logger.error('Failed to get IoT summary:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'IOT_SUMMARY_ERROR',
+        message: 'Failed to retrieve IoT summary'
+      },
+      timestamp: new Date().toISOString(),
+      requestId: req.headers['x-request-id']
+    });
+  }
+});
+
+// Sensor data endpoint
+app.get('/api/v1/iot/data/:deviceId', authMiddleware, async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+    const { hours = 24 } = req.query;
+    const userId = (req as any).user?.userId;
+    
+    // Mock sensor data for now
+    const sensorData = {
+      deviceId,
+      period: `${hours}h`,
+      dataPoints: Array.from({ length: parseInt(hours as string) }, (_, i) => ({
+        timestamp: new Date(Date.now() - i * 3600000).toISOString(),
+        temperature: 20 + Math.random() * 10,
+        humidity: 50 + Math.random() * 30,
+        soilMoisture: 30 + Math.random() * 40,
+        ph: 6 + Math.random() * 2
+      })).reverse()
+    };
+
+    res.json({
+      success: true,
+      data: sensorData,
+      timestamp: new Date().toISOString(),
+      requestId: req.headers['x-request-id']
+    });
+  } catch (error) {
+    logger.error('Failed to get sensor data:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SENSOR_DATA_ERROR',
+        message: 'Failed to retrieve sensor data'
+      },
+      timestamp: new Date().toISOString(),
+      requestId: req.headers['x-request-id']
+    });
+  }
+});
+
 // Routes
 app.use('/api/v1/iot', authMiddleware);
 app.use('/api/v1/iot/devices', deviceRoutes);

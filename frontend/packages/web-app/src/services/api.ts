@@ -243,7 +243,7 @@ class ApiClient {
     return this.get('/api/v1/financial/summary');
   }
 
-  async getTransactions(params?: any): Promise<ApiResponse<any>> {
+  async getFinancialTransactions(params?: any): Promise<ApiResponse<any>> {
     const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
     return this.get(`/api/v1/financial/transactions${queryString}`);
   }
@@ -324,7 +324,7 @@ export const dashboardApi = {
 
 export const financialApi = {
   getSummary: () => apiClient.getFinancialSummary(),
-  getTransactions: (params?: any) => apiClient.getTransactions(params),
+  getTransactions: (params?: any) => apiClient.getFinancialTransactions(params),
   getBudgets: () => apiClient.getBudgets(),
 };
 

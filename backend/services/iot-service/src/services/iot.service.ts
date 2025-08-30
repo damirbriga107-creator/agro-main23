@@ -2,483 +2,270 @@ import { MongoConnection, RedisConnection, KafkaConnection, Logger } from '@daor
 import { ObjectId } from 'mongodb';
 
 export interface IoTDevice {
-  _id?: ObjectId;
-  deviceId: string;
-  farmId: string;
+  id: string;
   name: string;
-  type: 'sensor' | 'actuator' | 'gateway';
-  status: 'online' | 'offline' | 'maintenance';
+  type: 'soil_sensor' | 'weather_station' | 'irrigation_controller' | 'camera' | 'moisture_sensor' | 'temperature_sensor';
+  status: 'online' | 'offline' | 'maintenance' | 'error';
   location: {
-    lat: number;
-    lng: number;
-    elevation?: number;
+    farmId: string;
+    farmName: string;
+    coordinates: {
+      lat: number;
+      lng: number;
+    };
+    field?: string;
   };
-  specifications: {
-    model: string;
-    manufacturer: string;
-    firmware: string;
-    sensors: string[];
+  lastSeen: string;
+  batteryLevel?: number;
+  signalStrength?: number;
+  firmware?: string;
+  sensorReadings?: {
+    temperature?: number;
+    humidity?: number;
+    soilMoisture?: number;
+    ph?: number;
+    nutrients?: {
+      nitrogen?: number;
+      phosphorus?: number;
+      potassium?: number;
+    };
   };
-  configuration: {
-    reportingInterval: number; // seconds
-    thresholds: Record<string, { min: number; max: number }>;
-    [key: string]: any;
-  };
-  lastSeen: Date;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
-export interface SensorReading {
-  _id?: ObjectId;
-  deviceId: string;
-  farmId: string;
-  sensorType: string;
-  value: number;
-  unit: string;
-  timestamp: Date;
-  location?: {
-    lat: number;
-    lng: number;
-  };
-  metadata: {
-    quality: number; // 0-1 quality score
-    calibrated: boolean;
-    [key: string]: any;
-  };
-  processed: boolean;
-  alerts?: string[];
-}
-
-/**
- * Core IoT service for device and data management
- */
 export class IoTService {
   private logger: Logger;
-  private mongo: MongoConnection;
-  private redis: RedisConnection;
-  private kafka: KafkaConnection;
 
   constructor() {
     this.logger = new Logger('iot-service-core');
-    this.mongo = MongoConnection.getInstance();
-    this.redis = RedisConnection.getInstance();
-    this.kafka = KafkaConnection.getInstance();
   }
 
   /**
-   * Register a new IoT device
+   * Get IoT devices with filtering
    */
-  async registerDevice(deviceData: Partial<IoTDevice>): Promise<IoTDevice> {
+  async getDevices(filters: any = {}): Promise<IoTDevice[]> {
     try {
-      const db = this.mongo.getDatabase();
-      const deviceCollection = db.collection<IoTDevice>('iot_devices');
+      this.logger.info('Fetching IoT devices', { filters });
 
-      // Check if device already exists
-      const existingDevice = await deviceCollection.findOne({ deviceId: deviceData.deviceId });
-      if (existingDevice) {
-        throw new Error(`Device with ID ${deviceData.deviceId} already exists`);
-      }
-
-      const device: IoTDevice = {
-        ...deviceData,
-        status: deviceData.status || 'offline',
-        lastSeen: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      } as IoTDevice;
-
-      const result = await deviceCollection.insertOne(device);
-      device._id = result.insertedId;
-
-      // Cache device info in Redis
-      await this.cacheDeviceInfo(device);
-
-      // Publish device registration event
-      await this.publishDeviceEvent('device_registered', device);
-
-      this.logger.info('Device registered successfully', { deviceId: device.deviceId });
-      return device;
-
-    } catch (error) {
-      this.logger.error('Failed to register device', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Update device status and last seen timestamp
-   */
-  async updateDeviceStatus(deviceId: string, status: 'online' | 'offline' | 'maintenance'): Promise<void> {
-    try {
-      const db = this.mongo.getDatabase();
-      const deviceCollection = db.collection<IoTDevice>('iot_devices');
-
-      const result = await deviceCollection.updateOne(
-        { deviceId },
-        { 
-          $set: { 
-            status, 
-            lastSeen: new Date(),
-            updatedAt: new Date()
-          } 
-        }
-      );
-
-      if (result.matchedCount === 0) {
-        throw new Error(`Device ${deviceId} not found`);
-      }
-
-      // Update cache
-      const device = await deviceCollection.findOne({ deviceId });
-      if (device) {
-        await this.cacheDeviceInfo(device);
-        await this.publishDeviceEvent('device_status_changed', device);
-      }
-
-      this.logger.info('Device status updated', { deviceId, status });
-
-    } catch (error) {
-      this.logger.error('Failed to update device status', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Store sensor reading
-   */
-  async storeSensorReading(reading: Partial<SensorReading>): Promise<SensorReading> {
-    try {
-      const db = this.mongo.getDatabase();
-      const readingsCollection = db.collection<SensorReading>('sensor_readings');
-
-      const sensorReading: SensorReading = {
-        ...reading,
-        timestamp: reading.timestamp || new Date(),
-        processed: false,
-        metadata: {
-          quality: 1.0,
-          calibrated: true,
-          ...reading.metadata
-        }
-      } as SensorReading;
-
-      // Validate reading
-      await this.validateSensorReading(sensorReading);
-
-      const result = await readingsCollection.insertOne(sensorReading);
-      sensorReading._id = result.insertedId;
-
-      // Update device last seen
-      await this.updateDeviceStatus(sensorReading.deviceId, 'online');
-
-      // Process alerts
-      sensorReading.alerts = await this.checkAlerts(sensorReading);
-
-      // Publish to Kafka for real-time processing
-      await this.publishSensorData(sensorReading);
-
-      // Cache recent reading
-      await this.cacheRecentReading(sensorReading);
-
-      this.logger.debug('Sensor reading stored', { 
-        deviceId: sensorReading.deviceId, 
-        sensorType: sensorReading.sensorType,
-        value: sensorReading.value
-      });
-
-      return sensorReading;
-
-    } catch (error) {
-      this.logger.error('Failed to store sensor reading', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get device by ID
-   */
-  async getDevice(deviceId: string): Promise<IoTDevice | null> {
-    try {
-      // Try cache first
-      const cached = await this.getCachedDeviceInfo(deviceId);
-      if (cached) {
-        return cached;
-      }
-
-      // Fallback to database
-      const db = this.mongo.getDatabase();
-      const deviceCollection = db.collection<IoTDevice>('iot_devices');
-      const device = await deviceCollection.findOne({ deviceId });
-
-      if (device) {
-        await this.cacheDeviceInfo(device);
-      }
-
-      return device;
-
-    } catch (error) {
-      this.logger.error('Failed to get device', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get devices by farm ID
-   */
-  async getDevicesByFarm(farmId: string): Promise<IoTDevice[]> {
-    try {
-      const db = this.mongo.getDatabase();
-      const deviceCollection = db.collection<IoTDevice>('iot_devices');
-      
-      const devices = await deviceCollection.find({ farmId }).toArray();
-      return devices;
-
-    } catch (error) {
-      this.logger.error('Failed to get devices by farm', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get recent sensor readings
-   */
-  async getRecentReadings(deviceId: string, hours: number = 24): Promise<SensorReading[]> {
-    try {
-      const db = this.mongo.getDatabase();
-      const readingsCollection = db.collection<SensorReading>('sensor_readings');
-      
-      const since = new Date(Date.now() - hours * 60 * 60 * 1000);
-      
-      const readings = await readingsCollection
-        .find({ 
-          deviceId, 
-          timestamp: { $gte: since } 
-        })
-        .sort({ timestamp: -1 })
-        .limit(1000)
-        .toArray();
-
-      return readings;
-
-    } catch (error) {
-      this.logger.error('Failed to get recent readings', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get aggregated sensor data
-   */
-  async getAggregatedData(
-    farmId: string, 
-    sensorType: string, 
-    startDate: Date, 
-    endDate: Date,
-    interval: 'hour' | 'day' | 'week' = 'hour'
-  ): Promise<any[]> {
-    try {
-      const db = this.mongo.getDatabase();
-      const readingsCollection = db.collection<SensorReading>('sensor_readings');
-
-      // Create aggregation pipeline based on interval
-      let groupBy: any;
-      switch (interval) {
-        case 'hour':
-          groupBy = {
-            year: { $year: '$timestamp' },
-            month: { $month: '$timestamp' },
-            day: { $dayOfMonth: '$timestamp' },
-            hour: { $hour: '$timestamp' }
-          };
-          break;
-        case 'day':
-          groupBy = {
-            year: { $year: '$timestamp' },
-            month: { $month: '$timestamp' },
-            day: { $dayOfMonth: '$timestamp' }
-          };
-          break;
-        case 'week':
-          groupBy = {
-            year: { $year: '$timestamp' },
-            week: { $week: '$timestamp' }
-          };
-          break;
-      }
-
-      const pipeline = [
+      // Mock IoT devices data
+      const mockDevices: IoTDevice[] = [
         {
-          $match: {
-            farmId,
-            sensorType,
-            timestamp: { $gte: startDate, $lte: endDate }
+          id: 'device-001',
+          name: 'Soil Sensor #1',
+          type: 'soil_sensor',
+          status: 'online',
+          location: {
+            farmId: 'farm-001',
+            farmName: 'Green Valley Farm',
+            coordinates: { lat: 40.7128, lng: -74.0060 },
+            field: 'Field A'
+          },
+          lastSeen: new Date().toISOString(),
+          batteryLevel: 85,
+          signalStrength: 92,
+          firmware: '1.2.3',
+          sensorReadings: {
+            temperature: 22.5,
+            humidity: 65,
+            soilMoisture: 42,
+            ph: 6.8,
+            nutrients: {
+              nitrogen: 35,
+              phosphorus: 15,
+              potassium: 28
+            }
           }
         },
         {
-          $group: {
-            _id: groupBy,
-            avgValue: { $avg: '$value' },
-            minValue: { $min: '$value' },
-            maxValue: { $max: '$value' },
-            count: { $sum: 1 },
-            timestamp: { $first: '$timestamp' }
+          id: 'device-002',
+          name: 'Weather Station #1',
+          type: 'weather_station',
+          status: 'online',
+          location: {
+            farmId: 'farm-001',
+            farmName: 'Green Valley Farm',
+            coordinates: { lat: 40.7138, lng: -74.0070 },
+            field: 'Central'
+          },
+          lastSeen: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
+          batteryLevel: 78,
+          signalStrength: 88,
+          firmware: '2.1.0',
+          sensorReadings: {
+            temperature: 18.3,
+            humidity: 72
           }
         },
         {
-          $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1, '_id.hour': 1 }
+          id: 'device-003',
+          name: 'Irrigation Controller #1',
+          type: 'irrigation_controller',
+          status: 'offline',
+          location: {
+            farmId: 'farm-002',
+            farmName: 'Sunny Acres',
+            coordinates: { lat: 40.7148, lng: -74.0080 },
+            field: 'Field B'
+          },
+          lastSeen: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+          batteryLevel: 45,
+          signalStrength: 65,
+          firmware: '1.1.8'
+        },
+        {
+          id: 'device-004',
+          name: 'Moisture Sensor #2',
+          type: 'moisture_sensor',
+          status: 'maintenance',
+          location: {
+            farmId: 'farm-001',
+            farmName: 'Green Valley Farm',
+            coordinates: { lat: 40.7158, lng: -74.0090 },
+            field: 'Field C'
+          },
+          lastSeen: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
+          batteryLevel: 92,
+          signalStrength: 75,
+          firmware: '1.3.1',
+          sensorReadings: {
+            soilMoisture: 38,
+            temperature: 21.8
+          }
+        },
+        {
+          id: 'device-005',
+          name: 'Temperature Sensor #3',
+          type: 'temperature_sensor',
+          status: 'error',
+          location: {
+            farmId: 'farm-002',
+            farmName: 'Sunny Acres',
+            coordinates: { lat: 40.7168, lng: -74.0100 },
+            field: 'Greenhouse'
+          },
+          lastSeen: new Date(Date.now() - 14400000).toISOString(), // 4 hours ago
+          batteryLevel: 15,
+          signalStrength: 32,
+          firmware: '1.0.9',
+          sensorReadings: {
+            temperature: 25.2,
+            humidity: 58
+          }
         }
       ];
 
-      const aggregatedData = await readingsCollection.aggregate(pipeline).toArray();
-      return aggregatedData;
+      // Apply filters
+      let filteredDevices = mockDevices;
+
+      if (filters.status) {
+        filteredDevices = filteredDevices.filter(device => device.status === filters.status);
+      }
+
+      if (filters.type) {
+        filteredDevices = filteredDevices.filter(device => device.type === filters.type);
+      }
+
+      if (filters.farmId) {
+        filteredDevices = filteredDevices.filter(device => device.location.farmId === filters.farmId);
+      }
+
+      if (filters.limit) {
+        filteredDevices = filteredDevices.slice(0, filters.limit);
+      }
+
+      this.logger.info('IoT devices retrieved successfully', {
+        totalDevices: filteredDevices.length,
+        filters
+      });
+
+      return filteredDevices;
 
     } catch (error) {
-      this.logger.error('Failed to get aggregated data', error);
+      this.logger.error('Failed to fetch IoT devices', error);
+      throw new Error('Failed to retrieve IoT devices');
+    }
+  }
+
+  /**
+   * Get device summary statistics
+   */
+  async getDeviceSummary(userId?: string): Promise<any> {
+    try {
+      const devices = await this.getDevices({ userId });
+
+      const summary = {
+        totalDevices: devices.length,
+        onlineDevices: devices.filter(d => d.status === 'online').length,
+        offlineDevices: devices.filter(d => d.status === 'offline').length,
+        maintenanceDevices: devices.filter(d => d.status === 'maintenance').length,
+        errorDevices: devices.filter(d => d.status === 'error').length,
+        averageBatteryLevel: Math.round(
+          devices.reduce((sum, d) => sum + (d.batteryLevel || 0), 0) / devices.length
+        ),
+        averageSignalStrength: Math.round(
+          devices.reduce((sum, d) => sum + (d.signalStrength || 0), 0) / devices.length
+        ),
+        deviceTypes: {
+          soil_sensor: devices.filter(d => d.type === 'soil_sensor').length,
+          weather_station: devices.filter(d => d.type === 'weather_station').length,
+          irrigation_controller: devices.filter(d => d.type === 'irrigation_controller').length,
+          camera: devices.filter(d => d.type === 'camera').length,
+          moisture_sensor: devices.filter(d => d.type === 'moisture_sensor').length,
+          temperature_sensor: devices.filter(d => d.type === 'temperature_sensor').length
+        },
+        recentAlerts: this.generateMockAlerts(),
+        lastUpdated: new Date().toISOString()
+      };
+
+      return summary;
+
+    } catch (error) {
+      this.logger.error('Failed to get device summary', error);
       throw error;
     }
   }
 
   /**
-   * Validate sensor reading
+   * Get specific device by ID
    */
-  private async validateSensorReading(reading: SensorReading): Promise<void> {
-    if (!reading.deviceId) {
-      throw new Error('Device ID is required');
-    }
-
-    if (!reading.sensorType) {
-      throw new Error('Sensor type is required');
-    }
-
-    if (typeof reading.value !== 'number') {
-      throw new Error('Sensor value must be a number');
-    }
-
-    // Check if device exists
-    const device = await this.getDevice(reading.deviceId);
-    if (!device) {
-      throw new Error(`Device ${reading.deviceId} not found`);
-    }
-
-    // Validate sensor type is supported by device
-    if (!device.specifications.sensors.includes(reading.sensorType)) {
-      throw new Error(`Sensor type ${reading.sensorType} not supported by device ${reading.deviceId}`);
+  async getDeviceById(deviceId: string, userId?: string): Promise<IoTDevice | null> {
+    try {
+      const devices = await this.getDevices({ userId });
+      return devices.find(device => device.id === deviceId) || null;
+    } catch (error) {
+      this.logger.error('Failed to get device by ID', error);
+      throw error;
     }
   }
 
   /**
-   * Check for alerts based on thresholds
+   * Generate mock alerts for devices
    */
-  private async checkAlerts(reading: SensorReading): Promise<string[]> {
-    const alerts: string[] = [];
-    
-    try {
-      const device = await this.getDevice(reading.deviceId);
-      if (!device) return alerts;
-
-      const thresholds = device.configuration.thresholds[reading.sensorType];
-      if (!thresholds) return alerts;
-
-      if (reading.value < thresholds.min) {
-        alerts.push(`${reading.sensorType} below minimum threshold (${reading.value} < ${thresholds.min})`);
+  private generateMockAlerts(): any[] {
+    return [
+      {
+        id: 'alert-iot-001',
+        deviceId: 'device-003',
+        type: 'device_offline',
+        severity: 'medium',
+        message: 'Irrigation Controller #1 has been offline for over 1 hour',
+        timestamp: new Date(Date.now() - 3600000).toISOString()
+      },
+      {
+        id: 'alert-iot-002',
+        deviceId: 'device-005',
+        type: 'low_battery',
+        severity: 'high',
+        message: 'Temperature Sensor #3 has low battery (15%)',
+        timestamp: new Date(Date.now() - 1800000).toISOString()
+      },
+      {
+        id: 'alert-iot-003',
+        deviceId: 'device-001',
+        type: 'sensor_reading',
+        severity: 'low',
+        message: 'Soil moisture levels are below optimal range in Field A',
+        timestamp: new Date(Date.now() - 900000).toISOString()
       }
-
-      if (reading.value > thresholds.max) {
-        alerts.push(`${reading.sensorType} above maximum threshold (${reading.value} > ${thresholds.max})`);
-      }
-
-    } catch (error) {
-      this.logger.error('Failed to check alerts', error);
-    }
-
-    return alerts;
-  }
-
-  /**
-   * Cache device information in Redis
-   */
-  private async cacheDeviceInfo(device: IoTDevice): Promise<void> {
-    try {
-      const redis = this.redis.getClient();
-      const key = `device:${device.deviceId}`;
-      await redis.setex(key, 3600, JSON.stringify(device)); // Cache for 1 hour
-    } catch (error) {
-      this.logger.error('Failed to cache device info', error);
-    }
-  }
-
-  /**
-   * Get cached device information
-   */
-  private async getCachedDeviceInfo(deviceId: string): Promise<IoTDevice | null> {
-    try {
-      const redis = this.redis.getClient();
-      const key = `device:${deviceId}`;
-      const cached = await redis.get(key);
-      return cached ? JSON.parse(cached) : null;
-    } catch (error) {
-      this.logger.error('Failed to get cached device info', error);
-      return null;
-    }
-  }
-
-  /**
-   * Cache recent reading
-   */
-  private async cacheRecentReading(reading: SensorReading): Promise<void> {
-    try {
-      const redis = this.redis.getClient();
-      const key = `recent:${reading.deviceId}:${reading.sensorType}`;
-      await redis.setex(key, 300, JSON.stringify(reading)); // Cache for 5 minutes
-    } catch (error) {
-      this.logger.error('Failed to cache recent reading', error);
-    }
-  }
-
-  /**
-   * Publish device event to Kafka
-   */
-  private async publishDeviceEvent(eventType: string, device: IoTDevice): Promise<void> {
-    try {
-      const producer = this.kafka.getProducer();
-      await producer.send({
-        topic: 'iot-events',
-        messages: [{
-          key: device.deviceId,
-          value: JSON.stringify({
-            eventType,
-            deviceId: device.deviceId,
-            farmId: device.farmId,
-            timestamp: new Date().toISOString(),
-            device
-          })
-        }]
-      });
-    } catch (error) {
-      this.logger.error('Failed to publish device event', error);
-    }
-  }
-
-  /**
-   * Publish sensor data to Kafka
-   */
-  private async publishSensorData(reading: SensorReading): Promise<void> {
-    try {
-      const producer = this.kafka.getProducer();
-      await producer.send({
-        topic: 'sensor-data',
-        messages: [{
-          key: reading.deviceId,
-          value: JSON.stringify({
-            eventType: 'sensor_reading',
-            ...reading,
-            timestamp: reading.timestamp.toISOString()
-          })
-        }]
-      });
-    } catch (error) {
-      this.logger.error('Failed to publish sensor data', error);
-    }
+    ];
   }
 }

@@ -8,12 +8,16 @@ import {
 
 interface Transaction {
   id: string;
-  type: string;
+  type: 'income' | 'expense';
   amount: number;
   description: string;
   status: 'completed' | 'pending' | 'failed';
-  createdAt: string;
+  createdAt?: string;
+  date?: string;
   category?: string;
+  farmName?: string;
+  paymentMethod?: string;
+  currency?: string;
 }
 
 interface RecentTransactionsProps {
@@ -62,12 +66,23 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ transactions })
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) {
+      return 'Just now';
+    } else if (diffInHours < 24) {
+      return `${diffInHours}h ago`;
+    } else if (diffInHours < 48) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+      });
+    }
   };
 
   return (
@@ -99,13 +114,21 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ transactions })
                     </p>
                     <div className="flex items-center space-x-2 mt-1">
                       <p className="text-xs text-gray-500">
-                        {formatDate(transaction.createdAt)}
+                        {formatDate(transaction.date || transaction.createdAt || '')}
                       </p>
                       {transaction.category && (
                         <>
                           <span className="text-xs text-gray-300">•</span>
                           <span className="text-xs text-gray-500 capitalize">
-                            {transaction.category}
+                            {transaction.category.replace('_', ' ')}
+                          </span>
+                        </>
+                      )}
+                      {transaction.farmName && (
+                        <>
+                          <span className="text-xs text-gray-300">•</span>
+                          <span className="text-xs text-gray-500">
+                            {transaction.farmName}
                           </span>
                         </>
                       )}

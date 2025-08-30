@@ -10,17 +10,23 @@ import {
 interface Device {
   id: string;
   name: string;
-  type: string;
-  status: 'online' | 'offline' | 'warning' | 'maintenance';
+  type: 'soil_sensor' | 'weather_station' | 'irrigation_controller' | 'camera' | 'moisture_sensor' | 'temperature_sensor';
+  status: 'online' | 'offline' | 'warning' | 'maintenance' | 'error';
   lastSeen: string;
   batteryLevel?: number;
   signalStrength?: number;
-  location?: string;
-  sensorData?: {
+  location?: {
+    farmId: string;
+    farmName: string;
+    field?: string;
+  };
+  sensorReadings?: {
     temperature?: number;
     humidity?: number;
     soilMoisture?: number;
+    ph?: number;
   };
+  firmware?: string;
 }
 
 interface DeviceStatusProps {
@@ -159,11 +165,12 @@ const DeviceStatus: React.FC<DeviceStatusProps> = ({ devices }) => {
                       <p className="text-xs text-gray-500">
                         Last seen: {formatLastSeen(device.lastSeen)}
                       </p>
-                      {device.location && (
+                      {device.location?.farmName && (
                         <>
                           <span className="text-xs text-gray-300">•</span>
                           <span className="text-xs text-gray-500">
-                            {device.location}
+                            {device.location.farmName}
+                            {device.location.field && ` - ${device.location.field}`}
                           </span>
                         </>
                       )}
@@ -173,16 +180,19 @@ const DeviceStatus: React.FC<DeviceStatusProps> = ({ devices }) => {
                 
                 <div className="flex items-center space-x-4">
                   {/* Sensor Data */}
-                  {device.sensorData && (
+                  {device.sensorReadings && (
                     <div className="hidden md:flex items-center space-x-3 text-xs text-gray-500">
-                      {device.sensorData.temperature && (
-                        <span>{device.sensorData.temperature}°C</span>
+                      {device.sensorReadings.temperature && (
+                        <span>{device.sensorReadings.temperature.toFixed(1)}°C</span>
                       )}
-                      {device.sensorData.humidity && (
-                        <span>{device.sensorData.humidity}%</span>
+                      {device.sensorReadings.humidity && (
+                        <span>{device.sensorReadings.humidity}% RH</span>
                       )}
-                      {device.sensorData.soilMoisture && (
-                        <span>Soil: {device.sensorData.soilMoisture}%</span>
+                      {device.sensorReadings.soilMoisture && (
+                        <span>Soil: {device.sensorReadings.soilMoisture}%</span>
+                      )}
+                      {device.sensorReadings.ph && (
+                        <span>pH: {device.sensorReadings.ph.toFixed(1)}</span>
                       )}
                     </div>
                   )}
