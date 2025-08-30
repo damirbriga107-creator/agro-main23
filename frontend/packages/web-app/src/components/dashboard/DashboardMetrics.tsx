@@ -184,24 +184,16 @@ const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ data }) => {
             
             <div className="mt-4 flex items-center justify-between">
               <div className="flex items-center">
-                {metric.title === 'Connected Devices' ? (
-                  <span className={`text-sm ${alertsCount > 0 ? 'text-yellow-600' : 'text-gray-500'}`}>
-                    {metric.changeText}
-                  </span>
+                {isPositiveChange ? (
+                  <ArrowUpIcon className="h-4 w-4 text-green-500" />
                 ) : (
-                  <>
-                    {isPositiveChange ? (
-                      <ArrowUpIcon className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <ArrowDownIcon className="h-4 w-4 text-red-500" />
-                    )}
-                    <span className={`ml-1 text-sm ${
-                      isPositiveChange ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {metric.changeText}
-                    </span>
-                  </>
+                  <ArrowDownIcon className="h-4 w-4 text-red-500" />
                 )}
+                <span className={`ml-1 text-sm ${
+                  isPositiveChange ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {metric.changeText}
+                </span>
               </div>
               <span className="text-xs text-gray-500">
                 {metric.description}

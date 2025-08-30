@@ -134,7 +134,7 @@ class ApiClient {
               return this.client(originalRequest);
             }
           } catch (refreshError) {
-            this.logout();
+            this.clearAuth();
             window.location.href = '/login';
           }
         }
@@ -175,7 +175,7 @@ class ApiClient {
     }
   }
 
-  private logout(): void {
+  private clearAuth(): void {
     localStorage.removeItem('auth_tokens');
     localStorage.removeItem('auth_user');
   }
@@ -213,10 +213,10 @@ class ApiClient {
   async logout(): Promise<ApiResponse<any>> {
     try {
       const result = await this.post('/api/v1/auth/logout');
-      this.logout();
+      this.clearAuth();
       return result;
     } catch (error) {
-      this.logout();
+      this.clearAuth();
       throw error;
     }
   }

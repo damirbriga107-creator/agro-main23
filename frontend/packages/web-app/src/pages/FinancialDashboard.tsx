@@ -19,8 +19,6 @@ import ErrorMessage from '../components/common/ErrorMessage';
 import TransactionForm from '../components/financial/TransactionForm';
 import FinancialNotifications from '../components/financial/FinancialNotifications';
 import { useFinancialWebSocket } from '../hooks/useFinancialWebSocket';
-import FinancialNotifications from '../components/financial/FinancialNotifications';
-import { useFinancialWebSocket } from '../hooks/useFinancialWebSocket';
 
 interface MetricCardProps {
   title: string;

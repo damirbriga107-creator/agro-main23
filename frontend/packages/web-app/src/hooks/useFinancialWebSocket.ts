@@ -16,6 +16,7 @@ interface FinancialNotification {
   severity: 'low' | 'medium' | 'high';
   farmId: string;
   createdAt: string;
+  readAt?: string;
   data?: any;
 }
 
