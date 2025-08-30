@@ -6,6 +6,9 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
+import mqtt from 'mqtt';
+import { Kafka } from 'kafkajs';
+import { MongoClient } from 'mongodb';
 
 import { ServiceConfigFactory, EnvironmentUtils } from '@daorsagro/config';
 import { 
@@ -19,7 +22,9 @@ import {
 import { ErrorHandlerMiddleware } from './middleware/error-handler.middleware';
 import { AuthMiddleware } from './middleware/auth.middleware';
 import { ValidationMiddleware } from './middleware/validation.middleware';
-import { setupRoutes } from './routes';
+import deviceRoutes from './routes/device.routes';
+import sensorRoutes from './routes/sensor.routes';
+import dataRoutes from './routes/data.routes';
 import { IoTService } from './services/iot.service';
 import { MqttHandler } from './services/mqtt.service';
 import { WebSocketHandler } from './services/websocket.service';
@@ -144,186 +149,167 @@ class IoTServiceApp {
     this.app.use('/api/v1/iot/data', dataIngestionLimiter);
   }
 
-// Health check
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'healthy',
-    service: 'iot-service',
-    timestamp: new Date().toISOString(),
-    connections: {
-      mongodb: mongoClient.topology?.isConnected() || false,
-      mqtt: mqttClient.connected,
-      kafka: 'connected', // Simplified check
-    },
-  });
-});
-
-// IoT devices endpoint for dashboard
-app.get('/api/v1/iot/devices', authMiddleware, async (req, res) => {
-  try {
-    const { limit = 10, status, type, farmId } = req.query;
-    const userId = (req as any).user?.userId;
-    
-    logger.info('IoT devices requested', {
-      requestId: req.headers['x-request-id'],
-      userId,
-      filters: { limit, status, type, farmId }
+  /**
+   * Setup routes
+   */
+  private setupRoutes(): void {
+    // Health check
+    this.app.get('/health', (req, res) => {
+      res.status(200).json({
+        status: 'healthy',
+        service: 'iot-service',
+        timestamp: new Date().toISOString(),
+        connections: {
+          mongodb: this.databaseManager.isConnected('mongodb'),
+          kafka: this.databaseManager.isConnected('kafka'),
+          redis: this.databaseManager.isConnected('redis')
+        },
+      });
     });
 
-    const iotService = new IoTService();
-    const devices = await iotService.getDevices({
-      limit: parseInt(limit as string),
-      status: status as string,
-      type: type as string,
-      farmId: farmId as string,
-      userId
-    });
-
-    res.json({
-      success: true,
-      data: devices,
-      timestamp: new Date().toISOString(),
-      requestId: req.headers['x-request-id']
-    });
-  } catch (error) {
-    logger.error('Failed to get IoT devices:', error);
-    res.status(500).json({
-      success: false,
-      error: {
-        code: 'IOT_DEVICES_ERROR',
-        message: 'Failed to retrieve IoT devices'
-      },
-      timestamp: new Date().toISOString(),
-      requestId: req.headers['x-request-id']
-    });
+    // Routes with authentication
+    this.app.use('/api/v1/iot', AuthMiddleware.authenticate);
+    this.app.use('/api/v1/iot/devices', deviceRoutes);
+    this.app.use('/api/v1/iot/sensors', sensorRoutes);
+    this.app.use('/api/v1/iot/data', dataRoutes);
   }
-});
 
-// IoT summary endpoint for dashboard
-app.get('/api/v1/iot/summary', authMiddleware, async (req, res) => {
-  try {
-    const userId = (req as any).user?.userId;
-    
-    const iotService = new IoTService();
-    const summary = await iotService.getDeviceSummary(userId);
-
-    res.json({
-      success: true,
-      data: summary,
-      timestamp: new Date().toISOString(),
-      requestId: req.headers['x-request-id']
-    });
-  } catch (error) {
-    logger.error('Failed to get IoT summary:', error);
-    res.status(500).json({
-      success: false,
-      error: {
-        code: 'IOT_SUMMARY_ERROR',
-        message: 'Failed to retrieve IoT summary'
-      },
-      timestamp: new Date().toISOString(),
-      requestId: req.headers['x-request-id']
-    });
+  /**
+   * Setup error handling
+   */
+  private setupErrorHandling(): void {
+    this.app.use(ErrorHandlerMiddleware.handle);
   }
-});
 
-// Sensor data endpoint
-app.get('/api/v1/iot/data/:deviceId', authMiddleware, async (req, res) => {
-  try {
-    const { deviceId } = req.params;
-    const { hours = 24 } = req.query;
-    const userId = (req as any).user?.userId;
-    
-    // Mock sensor data for now
-    const sensorData = {
-      deviceId,
-      period: `${hours}h`,
-      dataPoints: Array.from({ length: parseInt(hours as string) }, (_, i) => ({
-        timestamp: new Date(Date.now() - i * 3600000).toISOString(),
-        temperature: 20 + Math.random() * 10,
-        humidity: 50 + Math.random() * 30,
-        soilMoisture: 30 + Math.random() * 40,
-        ph: 6 + Math.random() * 2
-      })).reverse()
+  /**
+   * Initialize database connections
+   */
+  private async initializeDatabases(): Promise<void> {
+    try {
+      // Initialize MongoDB connection
+      const mongoConnection = new MongoConnection({
+        host: EnvironmentUtils.get('MONGODB_HOST', 'localhost'),
+        port: EnvironmentUtils.getNumber('MONGODB_PORT', 27017),
+        database: EnvironmentUtils.get('MONGODB_DATABASE', 'daorsagro'),
+        username: EnvironmentUtils.get('MONGODB_USERNAME', 'mongo'),
+        password: EnvironmentUtils.get('MONGODB_PASSWORD', 'mongo123')
+      });
+      
+      await this.databaseManager.addConnection('mongodb', mongoConnection);
+      this.logger.info('MongoDB connection initialized');
+
+      // Initialize Redis connection
+      const redisConnection = new RedisConnection({
+        host: EnvironmentUtils.get('REDIS_HOST', 'localhost'),
+        port: EnvironmentUtils.getNumber('REDIS_PORT', 6379),
+        password: EnvironmentUtils.get('REDIS_PASSWORD')
+      });
+      
+      await this.databaseManager.addConnection('redis', redisConnection);
+      this.logger.info('Redis connection initialized');
+
+      // Initialize Kafka connection
+      const kafkaConnection = new KafkaConnection({
+        brokers: EnvironmentUtils.getArray('KAFKA_BROKERS', ['localhost:9092']),
+        clientId: 'iot-service'
+      });
+      
+      await this.databaseManager.addConnection('kafka', kafkaConnection);
+      this.logger.info('Kafka connection initialized');
+
+    } catch (error) {
+      this.logger.error('Failed to initialize databases:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Initialize IoT-specific services
+   */
+  private async initializeIoTServices(): Promise<void> {
+    try {
+      // Initialize MQTT handler
+      this.mqttHandler = new MqttHandler(
+        this.databaseManager.getConnection('mongodb'),
+        this.databaseManager.getConnection('kafka')
+      );
+      await this.mqttHandler.initialize();
+      this.logger.info('MQTT handler initialized');
+
+      // Initialize WebSocket handler
+      this.websocketHandler = new WebSocketHandler(
+        this.wss,
+        this.databaseManager.getConnection('mongodb')
+      );
+      this.websocketHandler.initialize();
+      this.logger.info('WebSocket handler initialized');
+
+    } catch (error) {
+      this.logger.error('Failed to initialize IoT services:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Start the IoT service
+   */
+  public async start(): Promise<void> {
+    try {
+      // Initialize databases
+      await this.initializeDatabases();
+      
+      // Initialize IoT services
+      await this.initializeIoTServices();
+      
+      // Setup graceful shutdown
+      this.setupGracefulShutdown();
+      
+      // Start server
+      this.server.listen(this.config.port, () => {
+        this.logger.info(`IoT Service running on port ${this.config.port}`);
+        this.logger.info('All IoT connections established');
+      });
+      
+    } catch (error) {
+      this.logger.error('Failed to start IoT service:', error);
+      process.exit(1);
+    }
+  }
+
+  /**
+   * Setup graceful shutdown
+   */
+  private setupGracefulShutdown(): void {
+    const gracefulShutdown = async (signal: string) => {
+      this.logger.info(`${signal} received, shutting down gracefully`);
+      
+      try {
+        if (this.mqttHandler) {
+          await this.mqttHandler.disconnect();
+        }
+        
+        if (this.websocketHandler) {
+          this.websocketHandler.close();
+        }
+        
+        await this.databaseManager.closeAll();
+        
+        this.server.close(() => {
+          process.exit(0);
+        });
+      } catch (error) {
+        this.logger.error('Error during graceful shutdown:', error);
+        process.exit(1);
+      }
     };
 
-    res.json({
-      success: true,
-      data: sensorData,
-      timestamp: new Date().toISOString(),
-      requestId: req.headers['x-request-id']
-    });
-  } catch (error) {
-    logger.error('Failed to get sensor data:', error);
-    res.status(500).json({
-      success: false,
-      error: {
-        code: 'SENSOR_DATA_ERROR',
-        message: 'Failed to retrieve sensor data'
-      },
-      timestamp: new Date().toISOString(),
-      requestId: req.headers['x-request-id']
-    });
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
   }
-});
+}
 
-// Routes
-app.use('/api/v1/iot', authMiddleware);
-app.use('/api/v1/iot/devices', deviceRoutes);
-app.use('/api/v1/iot/sensors', sensorRoutes);
-app.use('/api/v1/iot/data', dataRoutes);
+// Start the IoT service
+const iotService = new IoTServiceApp();
+iotService.start();
 
-app.use(errorHandler);
-
-// Initialize services
-let mqttHandler: MqttHandler;
-let websocketHandler: WebSocketHandler;
-
-// Graceful shutdown
-const gracefulShutdown = async (signal: string) => {
-  logger.info(`${signal} received, shutting down gracefully`);
-  
-  try {
-    mqttClient.end();
-    wss.close();
-    await producer.disconnect();
-    await mongoClient.close();
-    server.close(() => {
-      process.exit(0);
-    });
-  } catch (error) {
-    logger.error('Error during graceful shutdown:', error);
-    process.exit(1);
-  }
-};
-
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-// Start server
-const startServer = async () => {
-  try {
-    await mongoClient.connect();
-    await producer.connect();
-    
-    // Initialize MQTT handler
-    mqttHandler = new MqttHandler(mqttClient, mongoClient, producer);
-    await mqttHandler.initialize();
-    
-    // Initialize WebSocket handler
-    websocketHandler = new WebSocketHandler(wss, mongoClient);
-    websocketHandler.initialize();
-    
-    server.listen(PORT, () => {
-      logger.info(`IoT Service running on port ${PORT}`);
-      logger.info('MQTT client connected:', mqttClient.connected);
-    });
-  } catch (error) {
-    logger.error('Failed to start server:', error);
-    process.exit(1);
-  }
-};
-
-startServer();
-
-export { mongoClient, producer, mqttClient, wss };
+export default iotService;
