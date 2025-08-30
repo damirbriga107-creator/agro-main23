@@ -16,6 +16,7 @@ import { apiClient } from '../services/api';
 import { FinancialMetrics, Transaction, Budget } from '../types/financial';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorMessage from '../components/common/ErrorMessage';
+import TransactionForm from '../components/financial/TransactionForm';
 
 interface MetricCardProps {
   title: string;
@@ -187,6 +188,8 @@ const FinancialDashboard: React.FC = () => {
     startDate: new Date(new Date().getFullYear(), new Date().getMonth() - 2, 1).toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0]
   });
+  const [showTransactionForm, setShowTransactionForm] = useState(false);
+  const [transactionFormType, setTransactionFormType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
 
   // Fetch financial metrics
   const { data: metrics, isLoading: metricsLoading, error: metricsError } = useQuery<FinancialMetrics>(
@@ -288,7 +291,13 @@ const FinancialDashboard: React.FC = () => {
                 className="text-sm border border-gray-300 rounded-md px-3 py-1"
               />
             </div>
-            <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center text-sm font-medium">
+            <button 
+              onClick={() => {
+                setTransactionFormType('EXPENSE');
+                setShowTransactionForm(true);
+              }}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center text-sm font-medium"
+            >
               <PlusIcon className="h-4 w-4 mr-2" />
               Add Transaction
             </button>
@@ -417,7 +426,13 @@ const FinancialDashboard: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
             <div className="space-y-3">
-              <button className="w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+              <button 
+                onClick={() => {
+                  setTransactionFormType('INCOME');
+                  setShowTransactionForm(true);
+                }}
+                className="w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+              >
                 <div className="flex items-center">
                   <PlusIcon className="h-5 w-5 text-green-600 mr-3" />
                   <div>
@@ -427,7 +442,13 @@ const FinancialDashboard: React.FC = () => {
                 </div>
               </button>
               
-              <button className="w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+              <button 
+                onClick={() => {
+                  setTransactionFormType('EXPENSE');
+                  setShowTransactionForm(true);
+                }}
+                className="w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+              >
                 <div className="flex items-center">
                   <TrendingDownIcon className="h-5 w-5 text-red-600 mr-3" />
                   <div>
@@ -460,6 +481,19 @@ const FinancialDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Transaction Form Modal */}
+      <TransactionForm
+        isOpen={showTransactionForm}
+        onClose={() => setShowTransactionForm(false)}
+        initialData={{
+          transactionType: transactionFormType,
+          farmId: user?.farmIds?.[0] || ''
+        }}
+        onSuccess={() => {
+          // Queries will be invalidated by the TransactionForm component
+        }}
+      />
     </div>
   );
 };
