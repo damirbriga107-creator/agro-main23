@@ -2,192 +2,206 @@ import { Router, Express } from 'express';
 import Joi from 'joi';
 import { ValidationMiddleware } from '../middleware/validation.middleware';
 import { ErrorHandlerMiddleware } from '../middleware/error-handler.middleware';
+import { AuthMiddleware } from '../middleware/auth.middleware';
+import { AuthService } from '../services/auth.service';
 import { ServiceDependencies } from './index';
+import { UserRole } from '@daorsagro/types';
 
 /**
  * Setup user management routes
  */
 export function setupUserRoutes(app: Express, dependencies: ServiceDependencies, basePath: string): void {
   const router = Router();
-  const { logger } = dependencies;
+  const { logger, prisma, redis, emailService, config } = dependencies;
+  
+  // Initialize auth service
+  const authService = new AuthService(prisma, redis, emailService, config);
 
   // Get current user profile
   router.get(
     '/profile',
-    // TODO: Add authentication middleware
+    AuthMiddleware.authenticate,
     ErrorHandlerMiddleware.asyncHandler(async (req, res) => {
-      // TODO: Implement get user profile logic
       logger.info('Get user profile request', {
+        userId: req.user?.userId,
         requestId: req.headers['x-request-id']
       });
 
-      res.json({
-        success: true,
-        data: {
-          user: {
-            id: 'temp-id',
-            email: 'user@example.com',
-            firstName: 'John',
-            lastName: 'Doe',
-            phone: '+1234567890',
-            farmName: 'Green Valley Farm',
-            farmLocation: 'California, USA',
-            avatar: null,
-            emailVerified: true,
-            twoFactorEnabled: false,
-            status: 'ACTIVE',
-            role: 'FARMER',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+      try {
+        const userProfile = await authService.getUserProfile(req.user.userId);
+        
+        res.json({
+          success: true,
+          data: {
+            user: userProfile
           }
+        });
+      } catch (error) {
+        if (error.message.includes('not found')) {
+          return res.status(404).json({
+            error: {
+              code: 'USER_NOT_FOUND',
+              message: error.message,
+              timestamp: new Date().toISOString(),
+              requestId: req.headers['x-request-id']
+            }
+          });
         }
-      });
+        throw error;
+      }
     })
   );
 
   // Update user profile
   router.put(
     '/profile',
-    // TODO: Add authentication middleware
+    AuthMiddleware.authenticate,
     ValidationMiddleware.sanitizeInput,
     ValidationMiddleware.validate(ValidationMiddleware.authSchemas.updateProfile),
     ErrorHandlerMiddleware.asyncHandler(async (req, res) => {
-      // TODO: Implement update user profile logic
       logger.info('Update user profile request', {
+        userId: req.user?.userId,
         requestId: req.headers['x-request-id']
       });
 
-      res.json({
-        success: true,
-        message: 'Profile updated successfully',
-        data: {
-          user: {
-            id: 'temp-id',
-            ...req.body,
-            updatedAt: new Date().toISOString()
+      try {
+        const { firstName, lastName, farmName, phoneNumber } = req.body;
+        const updatedProfile = await authService.updateUserProfile(req.user.userId, {
+          firstName,
+          lastName,
+          farmName,
+          phoneNumber
+        });
+        
+        res.json({
+          success: true,
+          message: 'Profile updated successfully',
+          data: {
+            user: updatedProfile
           }
+        });
+      } catch (error) {
+        if (error.message.includes('not found')) {
+          return res.status(404).json({
+            error: {
+              code: 'USER_NOT_FOUND',
+              message: error.message,
+              timestamp: new Date().toISOString(),
+              requestId: req.headers['x-request-id']
+            }
+          });
         }
-      });
+        throw error;
+      }
     })
   );
 
   // Delete user account
   router.delete(
     '/profile',
-    // TODO: Add authentication middleware
+    AuthMiddleware.authenticate,
     ErrorHandlerMiddleware.asyncHandler(async (req, res) => {
-      // TODO: Implement delete user account logic
       logger.info('Delete user account request', {
+        userId: req.user?.userId,
         requestId: req.headers['x-request-id']
       });
 
-      res.json({
-        success: true,
-        message: 'Account deleted successfully'
-      });
+      try {
+        // TODO: Implement soft delete user account logic
+        // For now, just logout the user
+        await authService.logoutUser(req.user.userId);
+        
+        res.json({
+          success: true,
+          message: 'Account deletion request processed. Please contact support for permanent deletion.'
+        });
+      } catch (error) {
+        throw error;
+      }
     })
   );
 
   // Get user by ID (admin only)
   router.get(
     '/:id',
-    // TODO: Add authentication middleware
-    // TODO: Add admin authorization middleware
+    AuthMiddleware.authenticate,
+    AuthMiddleware.requireRole([UserRole.ADMIN]),
     ValidationMiddleware.validate({ params: ValidationMiddleware.schemas.id }),
     ErrorHandlerMiddleware.asyncHandler(async (req, res) => {
-      // TODO: Implement get user by ID logic
       logger.info('Get user by ID request', {
-        userId: req.params.id,
+        targetUserId: req.params.id,
+        requestingUserId: req.user?.userId,
         requestId: req.headers['x-request-id']
       });
 
-      res.json({
-        success: true,
-        data: {
-          user: {
-            id: req.params.id,
-            email: 'user@example.com',
-            firstName: 'John',
-            lastName: 'Doe',
-            phone: '+1234567890',
-            farmName: 'Green Valley Farm',
-            farmLocation: 'California, USA',
-            avatar: null,
-            emailVerified: true,
-            twoFactorEnabled: false,
-            status: 'ACTIVE',
-            role: 'FARMER',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            lastLoginAt: new Date().toISOString()
+      try {
+        const userProfile = await authService.getUserProfile(req.params.id);
+        
+        res.json({
+          success: true,
+          data: {
+            user: userProfile
           }
+        });
+      } catch (error) {
+        if (error.message.includes('not found')) {
+          return res.status(404).json({
+            error: {
+              code: 'USER_NOT_FOUND',
+              message: error.message,
+              timestamp: new Date().toISOString(),
+              requestId: req.headers['x-request-id']
+            }
+          });
         }
-      });
+        throw error;
+      }
     })
   );
 
   // List users (admin only)
   router.get(
     '/',
-    // TODO: Add authentication middleware
-    // TODO: Add admin authorization middleware
+    AuthMiddleware.authenticate,
+    AuthMiddleware.requireRole([UserRole.ADMIN]),
     ValidationMiddleware.validate(ValidationMiddleware.querySchemas.userList),
     ErrorHandlerMiddleware.asyncHandler(async (req, res) => {
-      // TODO: Implement list users logic
       logger.info('List users request', {
         query: req.query,
+        requestingUserId: req.user?.userId,
         requestId: req.headers['x-request-id']
       });
 
-      const { page = 1, limit = 20 } = req.query as any;
-
-      res.json({
-        success: true,
-        data: {
-          users: [
-            {
-              id: 'user-1',
-              email: 'user1@example.com',
-              firstName: 'John',
-              lastName: 'Doe',
-              farmName: 'Green Valley Farm',
-              status: 'ACTIVE',
-              role: 'FARMER',
-              emailVerified: true,
-              createdAt: new Date().toISOString(),
-              lastLoginAt: new Date().toISOString()
-            },
-            {
-              id: 'user-2',
-              email: 'user2@example.com',
-              firstName: 'Jane',
-              lastName: 'Smith',
-              farmName: 'Sunny Acres Farm',
-              status: 'ACTIVE',
-              role: 'FARMER',
-              emailVerified: true,
-              createdAt: new Date().toISOString(),
-              lastLoginAt: new Date().toISOString()
+      try {
+        // TODO: Implement actual user listing with pagination
+        const { page = 1, limit = 20 } = req.query as any;
+        
+        // For now, return mock data
+        res.json({
+          success: true,
+          data: {
+            users: [],
+            pagination: {
+              page: parseInt(page),
+              limit: parseInt(limit),
+              total: 0,
+              totalPages: 0,
+              hasNext: false,
+              hasPrev: false
             }
-          ],
-          pagination: {
-            page: parseInt(page),
-            limit: parseInt(limit),
-            total: 2,
-            totalPages: 1,
-            hasNext: false,
-            hasPrev: false
           }
-        }
-      });
+        });
+      } catch (error) {
+        throw error;
+      }
     })
   );
 
   // Update user status (admin only)
   router.put(
     '/:id/status',
-    // TODO: Add authentication middleware
-    // TODO: Add admin authorization middleware
+    AuthMiddleware.authenticate,
+    AuthMiddleware.requireRole([UserRole.ADMIN]),
     ValidationMiddleware.validate({ params: ValidationMiddleware.schemas.id }),
     ValidationMiddleware.validate({
       body: {
@@ -196,7 +210,6 @@ export function setupUserRoutes(app: Express, dependencies: ServiceDependencies,
       }
     }),
     ErrorHandlerMiddleware.asyncHandler(async (req, res) => {
-      // TODO: Implement update user status logic
       logger.info('Update user status request', {
         userId: req.params.id,
         newStatus: req.body.status,
