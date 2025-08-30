@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useQuery } from 'react-query';
+import { useQuery, useQueryClient } from 'react-query';
 import { 
   CurrencyDollarIcon,
   TrendingUpIcon,
@@ -17,6 +17,10 @@ import { FinancialMetrics, Transaction, Budget } from '../types/financial';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorMessage from '../components/common/ErrorMessage';
 import TransactionForm from '../components/financial/TransactionForm';
+import FinancialNotifications from '../components/financial/FinancialNotifications';
+import { useFinancialWebSocket } from '../hooks/useFinancialWebSocket';
+import FinancialNotifications from '../components/financial/FinancialNotifications';
+import { useFinancialWebSocket } from '../hooks/useFinancialWebSocket';
 
 interface MetricCardProps {
   title: string;
@@ -190,6 +194,43 @@ const FinancialDashboard: React.FC = () => {
   });
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [transactionFormType, setTransactionFormType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
+  const queryClient = useQueryClient();
+
+  // WebSocket connection for real-time updates
+  const { isConnected, lastEvent } = useFinancialWebSocket({
+    farmId: user?.farmIds?.[0],
+    subscriptions: ['transactions', 'budgets', 'reports'],
+    autoConnect: true
+  });
+
+  // Invalidate queries when real-time events are received
+  React.useEffect(() => {
+    if (lastEvent) {
+      const { type } = lastEvent;
+      
+      if (type.includes('transaction')) {
+        queryClient.invalidateQueries(['financial-metrics']);
+        queryClient.invalidateQueries(['recent-transactions']);
+      }
+      
+      if (type.includes('budget')) {
+        queryClient.invalidateQueries(['active-budgets']);
+        queryClient.invalidateQueries(['financial-metrics']);
+      }
+      
+      if (type.includes('summary')) {
+        queryClient.invalidateQueries(['financial-metrics']);
+      }
+    }
+  }, [lastEvent, queryClient]);
+  const queryClient = useQueryClient();
+
+  // WebSocket connection for real-time updates
+  const { isConnected, lastEvent } = useFinancialWebSocket({
+    farmId: user?.farmIds?.[0],
+    subscriptions: ['transactions', 'budgets', 'reports'],
+    autoConnect: true
+  });
 
   // Fetch financial metrics
   const { data: metrics, isLoading: metricsLoading, error: metricsError } = useQuery<FinancialMetrics>(
@@ -291,6 +332,7 @@ const FinancialDashboard: React.FC = () => {
                 className="text-sm border border-gray-300 rounded-md px-3 py-1"
               />
             </div>
+            <FinancialNotifications farmId={user?.farmIds?.[0]} />
             <button 
               onClick={() => {
                 setTransactionFormType('EXPENSE');
@@ -351,13 +393,21 @@ const FinancialDashboard: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium text-gray-900">Monthly Trend</h3>
-              <ChartBarIcon className="h-5 w-5 text-gray-400" />
+              <div className="flex items-center space-x-2">
+                <ChartBarIcon className="h-5 w-5 text-gray-400" />
+                <div className={`h-2 w-2 rounded-full ${
+                  isConnected ? 'bg-green-400' : 'bg-red-400'
+                }`} title={isConnected ? 'Real-time updates active' : 'Real-time updates unavailable'} />
+              </div>
             </div>
             <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
               <div className="text-center text-gray-500">
                 <ChartBarIcon className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                 <p>Chart visualization will be implemented here</p>
                 <p className="text-sm">Revenue vs Expenses over time</p>
+                {isConnected && (
+                  <p className="text-xs text-green-600 mt-2">📡 Real-time updates active</p>
+                )}
               </div>
             </div>
           </div>
