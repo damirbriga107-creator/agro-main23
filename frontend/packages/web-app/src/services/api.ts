@@ -253,8 +253,13 @@ class ApiClient {
   }
 
   // Financial methods
+  async getFinancialMetrics(params?: any): Promise<any> {
+    const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return this.get(`/api/v1/financial/reports/summary${queryString}`);
+  }
+
   async getFinancialSummary(): Promise<ApiResponse<any>> {
-    return this.get('/api/v1/financial/summary');
+    return this.get('/api/v1/financial/reports/summary');
   }
 
   async getFinancialTransactions(params?: any): Promise<ApiResponse<any>> {
@@ -262,8 +267,56 @@ class ApiClient {
     return this.get(`/api/v1/financial/transactions${queryString}`);
   }
 
-  async getBudgets(): Promise<ApiResponse<any>> {
-    return this.get('/api/v1/financial/budgets');
+  async createTransaction(data: any): Promise<ApiResponse<any>> {
+    return this.post('/api/v1/financial/transactions', data);
+  }
+
+  async updateTransaction(id: string, data: any): Promise<ApiResponse<any>> {
+    return this.put(`/api/v1/financial/transactions/${id}`, data);
+  }
+
+  async deleteTransaction(id: string): Promise<ApiResponse<any>> {
+    return this.delete(`/api/v1/financial/transactions/${id}`);
+  }
+
+  async getBudgets(params?: any): Promise<ApiResponse<any>> {
+    const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return this.get(`/api/v1/financial/budgets${queryString}`);
+  }
+
+  async createBudget(data: any): Promise<ApiResponse<any>> {
+    return this.post('/api/v1/financial/budgets', data);
+  }
+
+  async updateBudget(id: string, data: any): Promise<ApiResponse<any>> {
+    return this.put(`/api/v1/financial/budgets/${id}`, data);
+  }
+
+  async deleteBudget(id: string): Promise<ApiResponse<any>> {
+    return this.delete(`/api/v1/financial/budgets/${id}`);
+  }
+
+  async getCategories(params?: any): Promise<ApiResponse<any>> {
+    const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return this.get(`/api/v1/financial/categories${queryString}`);
+  }
+
+  async createCategory(data: any): Promise<ApiResponse<any>> {
+    return this.post('/api/v1/financial/categories', data);
+  }
+
+  async getProfitLossReport(params?: any): Promise<ApiResponse<any>> {
+    const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return this.get(`/api/v1/financial/reports/profit-loss${queryString}`);
+  }
+
+  async getCashFlowReport(params?: any): Promise<ApiResponse<any>> {
+    const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return this.get(`/api/v1/financial/reports/cash-flow${queryString}`);
+  }
+
+  async getBudgetAnalysisReport(budgetId: string): Promise<ApiResponse<any>> {
+    return this.get(`/api/v1/financial/reports/budget-analysis/${budgetId}`);
   }
 
   // IoT methods
@@ -337,9 +390,21 @@ export const dashboardApi = {
 };
 
 export const financialApi = {
+  getMetrics: (params?: any) => apiClient.getFinancialMetrics(params),
   getSummary: () => apiClient.getFinancialSummary(),
   getTransactions: (params?: any) => apiClient.getFinancialTransactions(params),
-  getBudgets: () => apiClient.getBudgets(),
+  createTransaction: (data: any) => apiClient.createTransaction(data),
+  updateTransaction: (id: string, data: any) => apiClient.updateTransaction(id, data),
+  deleteTransaction: (id: string) => apiClient.deleteTransaction(id),
+  getBudgets: (params?: any) => apiClient.getBudgets(params),
+  createBudget: (data: any) => apiClient.createBudget(data),
+  updateBudget: (id: string, data: any) => apiClient.updateBudget(id, data),
+  deleteBudget: (id: string) => apiClient.deleteBudget(id),
+  getCategories: (params?: any) => apiClient.getCategories(params),
+  createCategory: (data: any) => apiClient.createCategory(data),
+  getProfitLossReport: (params?: any) => apiClient.getProfitLossReport(params),
+  getCashFlowReport: (params?: any) => apiClient.getCashFlowReport(params),
+  getBudgetAnalysisReport: (budgetId: string) => apiClient.getBudgetAnalysisReport(budgetId),
 };
 
 export const iotApi = {
