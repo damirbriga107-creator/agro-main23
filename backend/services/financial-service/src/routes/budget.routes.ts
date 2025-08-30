@@ -7,7 +7,7 @@ import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { validationMiddleware, createBudgetSchema, updateBudgetSchema } from '../middleware/validation.middleware';
 import { createError } from '../middleware/error-handler.middleware';
 import { logger } from '../utils/logger';
-import { producer } from '../index';
+import { producer, webSocketService, notificationService } from '../index';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -73,6 +73,9 @@ router.post('/', validationMiddleware(createBudgetSchema), async (req: Authentic
         }),
       }],
     });
+
+    // Send real-time update via WebSocket
+    webSocketService.broadcastBudgetCreated(budget);
 
     logger.info(`Budget created: ${budget.id} for farm ${farmId}`);
 
@@ -249,6 +252,9 @@ router.put('/:id', validationMiddleware(updateBudgetSchema), async (req: Authent
         }),
       }],
     });
+
+    // Send real-time update via WebSocket
+    webSocketService.broadcastBudgetUpdate(budget);
 
     logger.info(`Budget updated: ${budget.id}`);
 

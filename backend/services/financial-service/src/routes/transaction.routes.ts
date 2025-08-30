@@ -7,7 +7,7 @@ import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { validationMiddleware, createTransactionSchema, updateTransactionSchema } from '../middleware/validation.middleware';
 import { createError } from '../middleware/error-handler.middleware';
 import { logger } from '../utils/logger';
-import { producer } from '../index';
+import { producer, webSocketService, notificationService } from '../index';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -60,6 +60,12 @@ router.post('/', validationMiddleware(createTransactionSchema), async (req: Auth
         }),
       }],
     });
+
+    // Send real-time update via WebSocket
+    webSocketService.broadcastTransactionCreated(transaction);
+
+    // Send notification
+    await notificationService.notifyTransactionCreated(transaction);
 
     logger.info(`Transaction created: ${transaction.id} for farm ${farmId}`);
 
@@ -230,6 +236,9 @@ router.put('/:id', validationMiddleware(updateTransactionSchema), async (req: Au
       }],
     });
 
+    // Send real-time update via WebSocket
+    webSocketService.broadcastTransactionUpdate(transaction);
+
     logger.info(`Transaction updated: ${transaction.id}`);
 
     res.json({
@@ -276,6 +285,9 @@ router.delete('/:id', async (req: AuthenticatedRequest, res, next) => {
         }),
       }],
     });
+
+    // Send real-time update via WebSocket
+    webSocketService.broadcastTransactionDeleted(id, existingTransaction.farmId);
 
     logger.info(`Transaction deleted: ${id}`);
 

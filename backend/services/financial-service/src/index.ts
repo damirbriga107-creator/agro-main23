@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import { createServer } from 'http';
 import { PrismaClient } from '@prisma/client';
 import { Kafka } from 'kafkajs';
 
@@ -15,9 +16,12 @@ import transactionRoutes from './routes/transaction.routes';
 import budgetRoutes from './routes/budget.routes';
 import reportRoutes from './routes/report.routes';
 import categoryRoutes from './routes/category.routes';
+import { FinancialWebSocketService } from './services/websocket.service';
+import { FinancialNotificationService } from './services/notification.service';
 
 const app = express();
 const PORT = process.env.PORT || 3002;
+const httpServer = createServer(app);
 
 // Database
 const prisma = new PrismaClient();
@@ -29,6 +33,12 @@ const kafka = new Kafka({
 });
 
 const producer = kafka.producer();
+
+// WebSocket Service
+const webSocketService = new FinancialWebSocketService(httpServer);
+
+// Notification Service
+const notificationService = new FinancialNotificationService(producer, webSocketService);
 
 // Rate limiting
 const limiter = rateLimit({
@@ -90,8 +100,9 @@ const startServer = async () => {
     await producer.connect();
     logger.info('Kafka producer connected');
 
-    app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
       logger.info(`Financial Service running on port ${PORT}`);
+      logger.info(`WebSocket server ready at ws://localhost:${PORT}/api/v1/financial/socket.io`);
     });
   } catch (error) {
     logger.error('Failed to start server:', error);
@@ -101,4 +112,4 @@ const startServer = async () => {
 
 startServer();
 
-export { prisma, producer };
+export { prisma, producer, webSocketService, notificationService };
