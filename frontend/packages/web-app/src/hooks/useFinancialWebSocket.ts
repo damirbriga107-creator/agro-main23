@@ -54,7 +54,7 @@ export const useFinancialWebSocket = (
   const [lastEvent, setLastEvent] = useState<FinancialEvent | null>(null);
   
   const socketRef = useRef<Socket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<number | null>(null);
 
   /**
    * Connect to WebSocket
@@ -70,7 +70,7 @@ export const useFinancialWebSocket = (
       return;
     }
 
-    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const baseURL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
     const socketURL = baseURL.replace('/api', '').replace('http', 'ws');
 
     const newSocket = io(socketURL, {
@@ -95,7 +95,7 @@ export const useFinancialWebSocket = (
       });
     });
 
-    newSocket.on('disconnect', (reason) => {
+    newSocket.on('disconnect', (reason: string) => {
       console.log('Disconnected from financial WebSocket:', reason);
       setIsConnected(false);
       
@@ -108,13 +108,13 @@ export const useFinancialWebSocket = (
       }
     });
 
-    newSocket.on('connect_error', (error) => {
+    newSocket.on('connect_error', (error: any) => {
       console.error('Financial WebSocket connection error:', error);
       setIsConnected(false);
     });
 
     // Listen for financial events
-    newSocket.on('financial:connected', (data) => {
+    newSocket.on('financial:connected', (data: any) => {
       console.log('Financial WebSocket connected:', data);
     });
 
@@ -150,7 +150,7 @@ export const useFinancialWebSocket = (
 
     newSocket.on('financial:notification', (event: FinancialEvent) => {
       const notification = event.data as FinancialNotification;
-      setNotifications(prev => [notification, ...prev].slice(0, 50)); // Keep last 50 notifications
+      setNotifications((prev: FinancialNotification[]) => [notification, ...prev].slice(0, 50)); // Keep last 50 notifications
       console.log('Financial notification:', notification);
     });
 
@@ -169,13 +169,13 @@ export const useFinancialWebSocket = (
         data: alert.data
       };
       
-      setNotifications(prev => [notification, ...prev].slice(0, 50));
+      setNotifications((prev: FinancialNotification[]) => [notification, ...prev].slice(0, 50));
       setLastEvent(event);
       
       console.log('Financial alert:', alert);
     });
 
-    newSocket.on('error', (error) => {
+    newSocket.on('error', (error: any) => {
       console.error('Financial WebSocket error:', error);
     });
 
@@ -231,8 +231,8 @@ export const useFinancialWebSocket = (
    * Mark a notification as read
    */
   const markNotificationAsRead = useCallback((notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
+    setNotifications((prev: FinancialNotification[]) => 
+      prev.map((notification: FinancialNotification) => 
         notification.id === notificationId 
           ? { ...notification, readAt: new Date().toISOString() }
           : notification

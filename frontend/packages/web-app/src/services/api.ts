@@ -79,7 +79,7 @@ class ApiClient {
   private baseURL: string;
 
   constructor() {
-    this.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    this.baseURL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
     
     this.client = axios.create({
       baseURL: this.baseURL,
@@ -95,7 +95,7 @@ class ApiClient {
   private setupInterceptors(): void {
     // Request interceptor for adding auth token
     this.client.interceptors.request.use(
-      (config) => {
+      (config: any) => {
         // Get token from localStorage that was stored by AuthContext
         const authTokens = localStorage.getItem('auth_tokens');
         if (authTokens) {
@@ -112,15 +112,15 @@ class ApiClient {
         
         return config;
       },
-      (error) => {
+      (error: any) => {
         return Promise.reject(error);
       }
     );
 
     // Response interceptor for handling auth errors
     this.client.interceptors.response.use(
-      (response) => response,
-      async (error) => {
+      (response: any) => response,
+      async (error: any) => {
         const originalRequest = error.config;
 
         if (error.response?.status === 401 && !originalRequest._retry) {

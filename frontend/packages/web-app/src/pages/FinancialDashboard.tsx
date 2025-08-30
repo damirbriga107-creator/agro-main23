@@ -319,14 +319,14 @@ const FinancialDashboard: React.FC = () => {
               <input
                 type="date"
                 value={dateRange.startDate}
-                onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateRange((prev: any) => ({ ...prev, startDate: e.target.value }))}
                 className="text-sm border border-gray-300 rounded-md px-3 py-1"
               />
               <span className="text-gray-500">to</span>
               <input
                 type="date"
                 value={dateRange.endDate}
-                onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDateRange((prev: any) => ({ ...prev, endDate: e.target.value }))}
                 className="text-sm border border-gray-300 rounded-md px-3 py-1"
               />
             </div>
