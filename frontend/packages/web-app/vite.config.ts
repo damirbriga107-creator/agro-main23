@@ -8,7 +8,20 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/api\./,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              networkTimeoutSeconds: 10,
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          }
+        ]
       },
       manifest: {
         name: 'DaorsAgro',
@@ -27,6 +40,20 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    outDir: 'dist',
+    sourcemap: process.env.NODE_ENV === 'development',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          ui: ['lucide-react', 'react-hot-toast']
+        }
+      }
+    },
+    chunkSizeWarningLimit: 1000
+  },
   server: {
     host: true,
     port: 5173,
@@ -35,5 +62,8 @@ export default defineConfig({
     alias: {
       '@': '/src',
     },
+  },
+  define: {
+    global: 'globalThis',
   },
 });
