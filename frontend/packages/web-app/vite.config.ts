@@ -1,3 +1,24 @@
+// Type declarations for missing modules
+declare module 'vite' {
+  export function defineConfig(config: any): any;
+}
+
+declare module '@vitejs/plugin-react' {
+  export default function react(): any;
+}
+
+declare module 'vite-plugin-pwa' {
+  export function VitePWA(options: any): any;
+}
+
+// Node.js environment detection
+declare const process: {
+  env: {
+    NODE_ENV?: string;
+    [key: string]: string | undefined;
+  };
+};
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -42,7 +63,7 @@ export default defineConfig({
   ],
   build: {
     outDir: 'dist',
-    sourcemap: process.env.NODE_ENV === 'development',
+    sourcemap: (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development') || false,
     rollupOptions: {
       output: {
         manualChunks: {
