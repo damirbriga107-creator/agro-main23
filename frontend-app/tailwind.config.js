@@ -1,0 +1,78 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: 'var(--primary-50)',
+          100: 'var(--primary-100)',
+          200: 'var(--primary-200)',
+          300: 'var(--primary-300)',
+          400: 'var(--primary-400)',
+          500: 'var(--primary-500)',
+          600: 'var(--primary-600)',
+          700: 'var(--primary-700)',
+          800: 'var(--primary-800)',
+          900: 'var(--primary-900)',
+        },
+        earth: {
+          50: 'var(--earth-50)',
+          100: 'var(--earth-100)',
+          200: 'var(--earth-200)',
+          300: 'var(--earth-300)',
+          400: 'var(--earth-400)',
+          500: 'var(--earth-500)',
+          600: 'var(--earth-600)',
+          700: 'var(--earth-700)',
+          800: 'var(--earth-800)',
+          900: 'var(--earth-900)',
+        },
+        sky: {
+          50: 'var(--sky-50)',
+          100: 'var(--sky-100)',
+          200: 'var(--sky-200)',
+          300: 'var(--sky-300)',
+          400: 'var(--sky-400)',
+          500: 'var(--sky-500)',
+          600: 'var(--sky-600)',
+          700: 'var(--sky-700)',
+          800: 'var(--sky-800)',
+          900: 'var(--sky-900)',
+        },
+        sunset: {
+          50: 'var(--sunset-50)',
+          100: 'var(--sunset-100)',
+          200: 'var(--sunset-200)',
+          300: 'var(--sunset-300)',
+          400: 'var(--sunset-400)',
+          500: 'var(--sunset-500)',
+          600: 'var(--sunset-600)',
+          700: 'var(--sunset-700)',
+          800: 'var(--sunset-800)',
+          900: 'var(--sunset-900)',
+        },
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+      animation: {
+        'fade-in-up': 'fadeInUp 0.6s ease-out',
+        'fade-in-left': 'fadeInLeft 0.6s ease-out',
+        'fade-in-right': 'fadeInRight 0.6s ease-out',
+        'stagger-fade-in': 'fadeInUp 0.6s ease-out',
+      },
+      boxShadow: {
+        'xs': 'var(--shadow-xs)',
+        'sm': 'var(--shadow-sm)',
+        'md': 'var(--shadow-md)',
+        'lg': 'var(--shadow-lg)',
+        'xl': 'var(--shadow-xl)',
+      },
+    },
+  },
+  plugins: [],
+}
