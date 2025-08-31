@@ -4,9 +4,11 @@ import {
   TruckIcon, 
   DocumentTextIcon, 
   ChartBarIcon,
-  ArrowUpIcon,
-  ArrowDownIcon
+  BuildingOfficeIcon,
+  CubeIcon
 } from '@heroicons/react/24/outline';
+import MetricCard from '../ui/MetricCard';
+import { LoadingSkeleton } from '../ui/LoadingComponents';
 
 interface MetricData {
   period?: string;
@@ -59,20 +61,12 @@ interface DashboardMetricsProps {
 }
 
 const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ data }) => {
-  // Handle loading state
+  // Handle loading state with beautiful skeletons
   if (!data || !data.metrics) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(4)].map((_, index) => (
-          <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
-              <div className="ml-4 flex-1">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-6 bg-gray-200 rounded w-1/2"></div>
-              </div>
-            </div>
-          </div>
+          <LoadingSkeleton key={index} type="card" className={`animate-fadeInUp stagger-${index + 1}`} />
         ))}
       </div>
     );
@@ -86,124 +80,76 @@ const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ data }) => {
     ((netProfit / financial.total_revenue) * 100) : 0;
   const revenueGrowth = 15.2; // Mock growth percentage
   const monthlyGrowth = 8;
+  const productionGrowth = 12.5;
+  const farmGrowth = 5.3;
 
   const metrics = [
     {
       title: 'Total Revenue',
-      value: `$${(financial?.total_revenue || 0).toLocaleString()}`,
-      change: revenueGrowth,
-      changeText: `+${revenueGrowth.toFixed(1)}%`,
+      value: financial?.total_revenue || 0,
+      subtitle: data.period || 'This month',
       icon: CurrencyDollarIcon,
-      color: 'blue',
-      description: data.period || 'This month'
+      color: 'primary' as const,
+      trend: {
+        value: revenueGrowth,
+        direction: 'up' as const,
+        label: 'vs last month'
+      }
     },
     {
       title: 'Net Profit',
-      value: `$${netProfit.toLocaleString()}`,
-      change: profitMargin,
-      changeText: `${profitMargin.toFixed(1)}% margin`,
+      value: netProfit,
+      subtitle: `${profitMargin.toFixed(1)}% profit margin`,
       icon: ChartBarIcon,
-      color: netProfit >= 0 ? 'green' : 'red',
-      description: 'Profit margin'
+      color: netProfit >= 0 ? 'earth' as const : 'sunset' as const,
+      trend: {
+        value: Math.abs(profitMargin),
+        direction: netProfit >= 0 ? 'up' as const : 'down' as const,
+        label: 'profit margin'
+      }
     },
     {
       title: 'Active Farms',
-      value: (financial?.active_farms || 0).toString(),
-      change: monthlyGrowth,
-      changeText: `+${monthlyGrowth} this month`,
-      icon: DocumentTextIcon,
-      color: 'indigo',
-      description: `${production?.producing_farms || 0} producing`
+      value: financial?.active_farms || 0,
+      subtitle: `${production?.producing_farms || 0} producing farms`,
+      icon: BuildingOfficeIcon,
+      color: 'sky' as const,
+      trend: {
+        value: farmGrowth,
+        direction: 'up' as const,
+        label: 'growth this month'
+      }
     },
     {
       title: 'Production',
-      value: `${(production?.total_production || 0).toLocaleString()} tons`,
-      change: production?.avg_quality_score || 0,
-      changeText: `${(production?.avg_quality_score || 0).toFixed(1)}% quality`,
-      icon: TruckIcon,
-      color: 'green',
-      description: `${production?.crop_varieties || 0} varieties`
+      value: `${(production?.total_production || 0).toLocaleString()}`,
+      subtitle: `${production?.crop_varieties || 0} crop varieties`,
+      icon: CubeIcon,
+      color: 'earth' as const,
+      trend: {
+        value: productionGrowth,
+        direction: 'up' as const,
+        label: 'tons produced'
+      }
     }
   ];
 
-  const getColorClasses = (color: string) => {
-    const colors = {
-      blue: {
-        bg: 'bg-blue-50',
-        icon: 'text-blue-600',
-        border: 'border-blue-200'
-      },
-      green: {
-        bg: 'bg-green-50',
-        icon: 'text-green-600',
-        border: 'border-green-200'
-      },
-      red: {
-        bg: 'bg-red-50',
-        icon: 'text-red-600',
-        border: 'border-red-200'
-      },
-      indigo: {
-        bg: 'bg-indigo-50',
-        icon: 'text-indigo-600',
-        border: 'border-indigo-200'
-      },
-      yellow: {
-        bg: 'bg-yellow-50',
-        icon: 'text-yellow-600',
-        border: 'border-yellow-200'
-      }
-    };
-    return colors[color as keyof typeof colors] || colors.blue;
-  };
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {metrics.map((metric, index) => {
-        const colorClasses = getColorClasses(metric.color);
-        const isPositiveChange = metric.change >= 0;
-        
-        return (
-          <div
-            key={index}
-            className={`bg-white rounded-lg shadow-sm border ${colorClasses.border} p-6 hover:shadow-md transition-shadow`}
-          >
-            <div className="flex items-center">
-              <div className={`${colorClasses.bg} rounded-lg p-3`}>
-                <metric.icon className={`h-6 w-6 ${colorClasses.icon}`} />
-              </div>
-              <div className="ml-4 flex-1">
-                <p className="text-sm font-medium text-gray-600">
-                  {metric.title}
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {metric.value}
-                </p>
-              </div>
-            </div>
-            
-            <div className="mt-4 flex items-center justify-between">
-              <div className="flex items-center">
-                {isPositiveChange ? (
-                  <ArrowUpIcon className="h-4 w-4 text-green-500" />
-                ) : (
-                  <ArrowDownIcon className="h-4 w-4 text-red-500" />
-                )}
-                <span className={`ml-1 text-sm ${
-                  isPositiveChange ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {metric.changeText}
-                </span>
-              </div>
-              <span className="text-xs text-gray-500">
-                {metric.description}
-              </span>
-            </div>
-          </div>
-        );
-      })}
+      {metrics.map((metric, index) => (
+        <MetricCard
+          key={index}
+          title={metric.title}
+          value={metric.value}
+          subtitle={metric.subtitle}
+          icon={metric.icon}
+          color={metric.color}
+          trend={metric.trend}
+          animationDelay={index * 100}
+          className="hover-lift"
+        />
+      ))}
     </div>
   );
 };
-
 export default DashboardMetrics;

@@ -61,82 +61,101 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="mt-1 text-gray-600">
+    <div className="space-y-8">
+      {/* Page Header with enhanced animations */}
+      <div className="card card-hover animate-fadeInUp border-gradient">
+        <div className="flex items-center justify-between p-8">
+          <div className="animate-fadeInLeft">
+            <h1 className="text-3xl font-bold text-gradient-primary mb-2">Dashboard</h1>
+            <p className="text-lg text-neutral-600">
               Welcome back! Here's an overview of your agricultural operations.
             </p>
           </div>
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center text-sm text-gray-500">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-              System Status: Online
+          <div className="flex items-center space-x-4 animate-fadeInRight">
+            <div className="flex items-center text-sm text-neutral-500 card px-4 py-2">
+              <div className="w-3 h-3 bg-primary-500 rounded-full mr-3 animate-pulse-slow"></div>
+              <span className="font-medium">System Status: Online</span>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-gradient-earth">
+                {new Date().toLocaleDateString()}
+              </div>
+              <div className="text-sm text-neutral-500">
+                {new Date().toLocaleDateString('en-US', { weekday: 'long' })}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Key Metrics */}
-      <DashboardMetrics data={dashboardData} />
+      {/* Key Metrics with staggered animations */}
+      <div className="animate-fadeInUp stagger-2">
+        <DashboardMetrics data={dashboardData} />
+      </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Main Content Grid with enhanced layout */}
+      <div className="grid-dashboard gap-8">
         {/* Left Column - Charts and Analytics */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-8">
           {/* Weather Widget */}
-          <WeatherWidget />
+          <div className="animate-fadeInUp stagger-3">
+            <WeatherWidget />
+          </div>
           
           {/* Recent Transactions */}
-          <RecentTransactions transactions={recentTransactions?.data || []} />
+          <div className="animate-fadeInUp stagger-4">
+            <RecentTransactions transactions={recentTransactions?.data || []} />
+          </div>
           
           {/* Device Status */}
-          <DeviceStatus devices={deviceStatus?.data || []} />
+          <div className="animate-fadeInUp stagger-5">
+            <DeviceStatus devices={deviceStatus?.data || []} />
+          </div>
         </div>
 
         {/* Right Column - Quick Actions and Alerts */}
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* Quick Actions */}
-          <QuickActions />
+          <div className="animate-fadeInRight stagger-3">
+            <QuickActions />
+          </div>
           
           {/* Alerts Panel */}
-          <AlertsPanel />
+          <div className="animate-fadeInRight stagger-4">
+            <AlertsPanel />
+          </div>
           
-          {/* System Health */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">System Health</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <CpuChipIcon className="h-5 w-5 text-blue-500 mr-2" />
-                  <span className="text-sm text-gray-700">API Gateway</span>
+          {/* System Health with enhanced design */}
+          <div className="card card-hover animate-fadeInRight stagger-5">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-neutral-900 mb-6 flex items-center">
+                <div className="w-2 h-6 bg-gradient-primary rounded-full mr-3"></div>
+                System Health
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-primary-50 to-sky-50 border border-primary-100 hover-lift">
+                  <div className="flex items-center">
+                    <CpuChipIcon className="h-5 w-5 text-primary-600 mr-3" />
+                    <span className="text-sm font-medium text-neutral-700">API Gateway</span>
+                  </div>
+                  <span className="status-online animate-scaleIn">Healthy</span>
                 </div>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  Healthy
-                </span>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <ShieldCheckIcon className="h-5 w-5 text-green-500 mr-2" />
-                  <span className="text-sm text-gray-700">Security</span>
+                
+                <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-primary-50 to-earth-50 border border-primary-100 hover-lift">
+                  <div className="flex items-center">
+                    <ShieldCheckIcon className="h-5 w-5 text-primary-600 mr-3" />
+                    <span className="text-sm font-medium text-neutral-700">Security</span>
+                  </div>
+                  <span className="status-online animate-scaleIn">Secure</span>
                 </div>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  Secure
-                </span>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <DocumentTextIcon className="h-5 w-5 text-blue-500 mr-2" />
-                  <span className="text-sm text-gray-700">Database</span>
+                
+                <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-sky-50 to-sunset-50 border border-sky-100 hover-lift">
+                  <div className="flex items-center">
+                    <DocumentTextIcon className="h-5 w-5 text-sky-600 mr-3" />
+                    <span className="text-sm font-medium text-neutral-700">Database</span>
+                  </div>
+                  <span className="status-online animate-scaleIn">Connected</span>
                 </div>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  Connected
-                </span>
               </div>
             </div>
           </div>
