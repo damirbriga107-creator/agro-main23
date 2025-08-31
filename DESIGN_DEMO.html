@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DaorsAgro - Beautiful Agricultural Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#f0fdf4', 500: '#22c55e', 600: '#16a34a' },
+                        earth: { 50: '#faf7f2', 500: '#b17c47', 600: '#a16a3a' },
+                        sky: { 50: '#f0f9ff', 500: '#0ea5e9', 600: '#0284c7' },
+                        sunset: { 50: '#fff7ed', 500: '#f97316', 600: '#ea580c' }
+                    },
+                    animation: {
+                        'fadeInUp': 'fadeInUp 0.6s ease-out forwards',
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeInUp: { '0%': { opacity: '0', transform: 'translateY(30px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                        float: { '0%, 100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-10px)' } }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background: linear-gradient(135deg, #fafaf9 0%, #faf7f2 50%, #f0f9ff 100%); }
+        .card { background: linear-gradient(145deg, #ffffff 0%, #fafaf9 100%); border-radius: 1rem; box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06); transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); }
+        .gradient-primary { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); box-shadow: 0 4px 20px rgba(34, 197, 94, 0.3); }
+        .text-gradient-primary { background: linear-gradient(135deg, #16a34a, #22c55e); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stagger-1 { animation-delay: 0.1s; } .stagger-2 { animation-delay: 0.2s; } .stagger-3 { animation-delay: 0.3s; } .stagger-4 { animation-delay: 0.4s; }
+    </style>
+</head>
+<body class="min-h-screen relative overflow-x-hidden">
+    <!-- Background decorations -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-gradient-to-br from-primary-200 to-primary-300 opacity-20 animate-float"></div>
+        <div class="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-gradient-to-br from-orange-200 to-orange-300 opacity-20 animate-float" style="animation-delay: 1s;"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="relative z-10 bg-white/80 backdrop-blur-lg border-b border-gray-200/50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="h-10 w-10 flex items-center justify-center rounded-2xl gradient-primary shadow-lg">
+                        <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16l-3-9m3 9l3-9" />
+                        </svg>
+                    </div>
+                    <span class="ml-3 text-xl font-bold text-gradient-primary">DaorsAgro</span>
+                </div>
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Dashboard</a>
+                    <a href="#" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Financial</a>
+                    <a href="#" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors">Documents</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Hero Section -->
+        <div class="text-center mb-12 animate-fadeInUp">
+            <h1 class="text-5xl font-bold text-gradient-primary mb-4">Beautiful Agricultural Platform</h1>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">Experience modern agriculture management with stunning design, reactive animations, and a unified color palette inspired by nature.</p>
+        </div>
+
+        <!-- Metrics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <div class="card animate-fadeInUp stagger-1 border-2 border-primary-200">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="p-3 rounded-2xl bg-gradient-to-br from-primary-50 to-primary-100 shadow-md">
+                            <svg class="h-6 w-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2" />
+                            </svg>
+                        </div>
+                        <div class="text-sm font-medium text-primary-600">+15.2%</div>
+                    </div>
+                    <h3 class="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">Total Revenue</h3>
+                    <div class="text-3xl font-bold text-gray-900">$124,500</div>
+                </div>
+                <div class="h-1 gradient-primary rounded-b-2xl"></div>
+            </div>
+
+            <div class="card animate-fadeInUp stagger-2 border-2 border-orange-200">
+                <div class="p-6">
+                    <h3 class="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">Production</h3>
+                    <div class="text-3xl font-bold text-gray-900">2,847 tons</div>
+                </div>
+                <div class="h-1 bg-gradient-to-r from-orange-400 to-orange-500 rounded-b-2xl"></div>
+            </div>
+
+            <div class="card animate-fadeInUp stagger-3 border-2 border-blue-200">
+                <div class="p-6">
+                    <h3 class="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">Active Farms</h3>
+                    <div class="text-3xl font-bold text-gray-900">87</div>
+                </div>
+                <div class="h-1 bg-gradient-to-r from-blue-400 to-blue-500 rounded-b-2xl"></div>
+            </div>
+
+            <div class="card animate-fadeInUp stagger-4 border-2 border-purple-200">
+                <div class="p-6">
+                    <h3 class="text-sm font-medium text-gray-600 uppercase tracking-wide mb-2">Efficiency</h3>
+                    <div class="text-3xl font-bold text-gray-900">94.2%</div>
+                </div>
+                <div class="h-1 bg-gradient-to-r from-purple-400 to-purple-500 rounded-b-2xl"></div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="text-center">
+            <h2 class="text-3xl font-bold text-gray-900 mb-8">Design Features</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="card p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">🎨 Unified Color Palette</h3>
+                    <p class="text-gray-600">Agricultural-inspired colors: Primary green, earth brown, sky blue, and sunset orange</p>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">✨ Subtle Animations</h3>
+                    <p class="text-gray-600">Smooth fade-in, floating elements, and hover effects with staggered timing</p>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">📱 Reactive Design</h3>
+                    <p class="text-gray-600">Glass morphism, gradient backgrounds, and responsive layouts</p>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
