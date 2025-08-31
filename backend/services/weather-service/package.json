@@ -1,0 +1,57 @@
+{
+  "name": "@daorsagro/weather-service",
+  "version": "1.0.0",
+  "description": "Weather Service for DaorsAgro Platform - Provides weather data, forecasts, and agricultural alerts",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "start": "node dist/index.js",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "helmet": "^7.1.0",
+    "cors": "^2.8.5",
+    "compression": "^1.7.4",
+    "morgan": "^1.10.0",
+    "express-rate-limit": "^7.1.5",
+    "express-validator": "^7.0.1",
+    "axios": "^1.6.0",
+    "node-cron": "^3.0.3",
+    "mongoose": "^8.0.3",
+    "redis": "^4.6.10",
+    "kafkajs": "^2.2.4",
+    "jsonwebtoken": "^9.0.2",
+    "winston": "^3.11.0",
+    "@daorsagro/config": "workspace:*",
+    "@daorsagro/types": "workspace:*",
+    "@daorsagro/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/compression": "^1.7.5",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^20.10.0",
+    "@types/node-cron": "^3.0.11",
+    "@types/jsonwebtoken": "^9.0.5",
+    "typescript": "^5.3.2",
+    "ts-node-dev": "^2.0.0",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.8",
+    "eslint": "^8.54.0",
+    "prettier": "^3.1.0"
+  },
+  "keywords": [
+    "weather",
+    "agriculture",
+    "forecast",
+    "climate",
+    "alerts",
+    "microservice"
+  ],
+  "author": "DaorsAgro Team",
+  "license": "MIT"
+}
