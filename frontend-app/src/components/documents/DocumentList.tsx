@@ -59,29 +59,29 @@ export const DocumentList: React.FC<DocumentListProps> = ({
 
   const getFileIcon = (mimeType: string) => {
     if (mimeType.startsWith('image/')) {
-      return <FileIcon className=\"w-8 h-8 text-blue-500\" />;
+      return <FileIcon className="w-8 h-8 text-blue-500" />;
     } else if (mimeType === 'application/pdf') {
-      return <FileText className=\"w-8 h-8 text-red-500\" />;
+      return <FileText className="w-8 h-8 text-red-500" />;
     } else if (mimeType.includes('word')) {
-      return <FileText className=\"w-8 h-8 text-blue-600\" />;
+      return <FileText className="w-8 h-8 text-blue-600" />;
     } else if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) {
-      return <FileText className=\"w-8 h-8 text-green-600\" />;
+      return <FileText className="w-8 h-8 text-green-600" />;
     } else {
-      return <FileText className=\"w-8 h-8 text-gray-500\" />;
+      return <FileText className="w-8 h-8 text-gray-500" />;
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className=\"w-4 h-4 text-green-500\" />;
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'processing':
       case 'pending':
-        return <Clock className=\"w-4 h-4 text-yellow-500\" />;
+        return <Clock className="w-4 h-4 text-yellow-500" />;
       case 'failed':
-        return <XCircle className=\"w-4 h-4 text-red-500\" />;
+        return <XCircle className="w-4 h-4 text-red-500" />;
       default:
-        return <AlertCircle className=\"w-4 h-4 text-gray-500\" />;
+        return <AlertCircle className="w-4 h-4 text-gray-500" />;
     }
   };
 
@@ -149,10 +149,10 @@ export const DocumentList: React.FC<DocumentListProps> = ({
         {documents.map((document) => (
           <div key={document._id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
             {/* Document Icon and Status */}
-            <div className=\"flex items-center justify-between mb-3\">
-              <div className=\"flex items-center gap-2\">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
                 {getFileIcon(document.mimeType)}
-                <div className=\"flex items-center gap-1\">
+                <div className="flex items-center gap-1">
                       {getStatusIcon(document.processingStatus)}
                       <span className="text-xs text-gray-500">{getStatusText(document.processingStatus)}</span>
                 </div>
@@ -166,16 +166,16 @@ export const DocumentList: React.FC<DocumentListProps> = ({
             <h3 className="font-medium text-gray-900 mb-2 truncate" title={document.fileName}>{document.fileName}</h3>
 
             {/* File Info */}
-            <div className=\"text-xs text-gray-500 mb-3 space-y-1\">
-              <div className=\"flex items-center justify-between\">
+            <div className="text-xs text-gray-500 mb-3 space-y-1">
+              <div className="flex items-center justify-between">
                 <span>{formatFileSize(document.size)}</span>
                 <span className={`px-2 py-1 rounded ${getCategoryColor(document.category)}`}>
                   {getCategoryLabel(document.category)}
                 </span>
               </div>
               <div>{getDocumentTypeLabel(document.documentType)}</div>
-              <div className=\"flex items-center gap-1\">
-                <Calendar className=\"w-3 h-3\" />
+              <div className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
                 {formatDate(document.uploadedAt)}
               </div>
             </div>
@@ -199,12 +199,12 @@ export const DocumentList: React.FC<DocumentListProps> = ({
             {document.description && <p className="text-xs text-gray-600 mb-3 line-clamp-2">{document.description}</p>}
 
             {/* Actions */}
-            <div className=\"flex items-center justify-between pt-3 border-t border-gray-100\">
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
               <button onClick={() => onView(document)} className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm">
                 <Eye className="w-4 h-4" />
                 View
               </button>
-              <div className=\"flex items-center gap-2\">
+              <div className="flex items-center gap-2">
                 <button onClick={() => onDownload(document)} className="flex items-center gap-1 text-gray-600 hover:text-gray-800 text-sm">
                   <Download className="w-4 h-4" />
                 </button>
@@ -221,7 +221,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
 
   // List view
   return (
-    <div className=\"space-y-2\">
+    <div className="space-y-2">
       {/* Header */}
       <div className="grid grid-cols-12 gap-4 p-3 text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-200">
         <div className="col-span-4">Document</div>
@@ -261,58 +261,58 @@ export const DocumentList: React.FC<DocumentListProps> = ({
           </div>
 
           {/* Type */}
-          <div className=\"col-span-2 flex items-center\">
-            <span className=\"text-sm text-gray-600\">
+          <div className="col-span-2 flex items-center">
+            <span className="text-sm text-gray-600">
               {getDocumentTypeLabel(document.documentType)}
             </span>
           </div>
 
           {/* Category */}
-          <div className=\"col-span-2 flex items-center\">
+          <div className="col-span-2 flex items-center">
             <span className={`text-xs px-2 py-1 rounded ${getCategoryColor(document.category)}`}>
               {getCategoryLabel(document.category)}
             </span>
           </div>
 
           {/* Size */}
-          <div className=\"col-span-1 flex items-center\">
-            <span className=\"text-sm text-gray-600\">
+          <div className="col-span-1 flex items-center">
+            <span className="text-sm text-gray-600">
               {formatFileSize(document.size)}
             </span>
           </div>
 
           {/* Upload Date */}
-          <div className=\"col-span-2 flex items-center\">
-            <div className=\"text-sm text-gray-600\">
-              <div className=\"flex items-center gap-1\">
-                <Calendar className=\"w-4 h-4\" />
+          <div className="col-span-2 flex items-center">
+            <div className="text-sm text-gray-600">
+              <div className="flex items-center gap-1">
+                <Calendar className="w-4 h-4" />
                 {formatDate(document.uploadedAt)}
               </div>
             </div>
           </div>
 
-          {/* Actions */}
-          <div className=\"col-span-1 flex items-center justify-end gap-2\">
+      {/* Actions */}
+      <div className="col-span-1 flex items-center justify-end gap-2">
             <button
               onClick={() => onView(document)}
-              className=\"text-blue-600 hover:text-blue-800 transition-colors\"
-              title=\"View document\"
+        className="text-blue-600 hover:text-blue-800 transition-colors"
+        title="View document"
             >
-              <Eye className=\"w-4 h-4\" />
+        <Eye className="w-4 h-4" />
             </button>
             <button
               onClick={() => onDownload(document)}
-              className=\"text-gray-600 hover:text-gray-800 transition-colors\"
-              title=\"Download document\"
+        className="text-gray-600 hover:text-gray-800 transition-colors"
+        title="Download document"
             >
-              <Download className=\"w-4 h-4\" />
+        <Download className="w-4 h-4" />
             </button>
             <button
               onClick={() => onDelete(document._id)}
-              className=\"text-red-600 hover:text-red-800 transition-colors\"
-              title=\"Delete document\"
+        className="text-red-600 hover:text-red-800 transition-colors"
+        title="Delete document"
             >
-              <Trash2 className=\"w-4 h-4\" />
+        <Trash2 className="w-4 h-4" />
             </button>
           </div>
         </div>
