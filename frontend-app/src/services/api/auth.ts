@@ -35,8 +35,8 @@ export class AuthAPI {
    * Refresh access token
    */
   static async refreshToken(refreshToken: string): Promise<{ accessToken: string; expiresIn: number }> {
-    const response = await api.post('/auth/refresh', { refreshToken });
-    return response.data.data;
+  const response = await api.post('/auth/refresh', { refreshToken }) as any;
+  return (response.data as any).data;
   }
 
   /**
@@ -78,15 +78,15 @@ export class AuthAPI {
    * Get current user profile
    */
   static async getProfile(): Promise<User> {
-    const response = await api.get<{ success: boolean; data: { user: User } }>('/users/profile');
-    return response.data.data.user;
+  const response = await api.get('/users/profile') as any;
+  return (response.data as any).data.user;
   }
 
   /**
    * Update user profile
    */
   static async updateProfile(updates: Partial<Pick<User, 'firstName' | 'lastName' | 'farmName' | 'phoneNumber'>>): Promise<User> {
-    const response = await api.put<{ success: boolean; data: { user: User } }>('/users/profile', updates);
-    return response.data.data.user;
+  const response = await api.put('/users/profile', updates) as any;
+  return (response.data as any).data.user;
   }
 }
