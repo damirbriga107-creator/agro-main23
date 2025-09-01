@@ -278,7 +278,7 @@ export const Documents: React.FC = () => {
               Upload Documents
             </button>
           </div>
-+
+
           {/* Stats Summary */}
           {stats && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -308,7 +308,7 @@ export const Documents: React.FC = () => {
                   <CheckCircle className="w-5 h-5 text-purple-600" />
                   <span className="text-sm text-purple-600 font-medium">Storage Usage</span>
                 </div>
-+
+
                 <p className="text-2xl font-bold text-purple-900 mt-1">{stats.storageUsage.percentage.toFixed(1)}%</p>
               </div>
             </div>
@@ -338,7 +338,7 @@ export const Documents: React.FC = () => {
               Filters
             </button>
           </div>
-+
+
           {/* Filters Panel */}
           {showFilters && (
             <DocumentFilters
@@ -348,14 +348,14 @@ export const Documents: React.FC = () => {
             />
           )}
         </div>
-+
+
         {/* Error Message */}
         {error && (
           <div className="mb-6">
             <ErrorMessage message={error} onClose={() => setError(null)} />
           </div>
         )}
-+
+
         {/* Document List */}
         <div className="bg-white rounded-lg shadow-sm">
           {loading ? (
@@ -369,7 +369,7 @@ export const Documents: React.FC = () => {
               <p className="text-gray-500 mb-4">
                 {searchQuery.fileName ? 'Try adjusting your search criteria' : 'Start by uploading your first document'}
               </p>
-+ 
+ 
               <button
                 onClick={() => setShowUploader(true)}
                 className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -387,7 +387,7 @@ export const Documents: React.FC = () => {
                   {Math.min((searchResults?.currentPage || 1) * (searchQuery.limit || 20), searchResults?.totalCount || 0)} of{' '}
                   {searchResults?.totalCount || 0} documents
                 </p>
-+
+
                 <div className="flex items-center gap-2">
                   <select
                     value={`${searchQuery.sortBy}-${searchQuery.sortOrder}`}
@@ -406,7 +406,7 @@ export const Documents: React.FC = () => {
                   </select>
                 </div>
               </div>
-+
+
               {/* Document List */}
               <DocumentList
                 documents={documents}
@@ -415,7 +415,7 @@ export const Documents: React.FC = () => {
                 onDelete={handleDeleteDocument}
                 viewMode={viewMode}
               />
-+
+
               {/* Pagination */}
               {searchResults && searchResults.totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-6">
@@ -426,7 +426,7 @@ export const Documents: React.FC = () => {
                   >
                     Previous
                   </button>
-+
+
                   {Array.from({ length: Math.min(5, searchResults.totalPages) }, (_, i) => {
                     const page = i + 1;
                     return (
@@ -441,9 +441,9 @@ export const Documents: React.FC = () => {
                       >
                         {page}
                       </button>
-+                    );
+                    );
                   })}
-+
+
                   <button
                     onClick={() => handlePageChange(searchResults.currentPage + 1)}
                     disabled={!searchResults.hasNextPage}
@@ -454,9 +454,9 @@ export const Documents: React.FC = () => {
                 </div>
               )}
             </div>
-+          )}
+          )}
         </div>
-+
+
         {/* Document Uploader Modal */}
         {showUploader && (
           <DocumentUploader
@@ -467,7 +467,7 @@ export const Documents: React.FC = () => {
             setUploading={setUploading}
           />
         )}
-+
+
         {/* Document Viewer Modal */}
         {selectedDocument && (
           <DocumentViewer
@@ -480,7 +480,7 @@ export const Documents: React.FC = () => {
             }}
           />
         )}
-+      </div>
+      </div>
     </div>
-+  );
+  );
 };
