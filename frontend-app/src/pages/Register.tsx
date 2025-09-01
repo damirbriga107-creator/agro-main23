@@ -82,7 +82,8 @@ const Register: React.FC = () => {
     let isValid = true;
 
     Object.keys(formData).forEach(field => {
-      const error = validateField(field, formData[field as keyof RegisterData]);
+      const value = String(formData[field as keyof RegisterData] ?? '');
+      const error = validateField(field, value, confirmPassword);
       if (error) {
         newErrors[field] = error;
         isValid = false;

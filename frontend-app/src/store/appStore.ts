@@ -424,7 +424,7 @@ export const useAppStore = create<AppState & AppActions>()(
           
           markNotificationAsRead: (id: string) =>
             set((state) => {
-              const notification = state.notifications.find((n) => n.id === id);
+              const notification = state.notifications.find((n: Notification) => n.id === id);
               if (notification && !notification.read) {
                 notification.read = true;
                 state.unreadNotificationCount = Math.max(0, state.unreadNotificationCount - 1);
@@ -433,7 +433,7 @@ export const useAppStore = create<AppState & AppActions>()(
           
           markAllNotificationsAsRead: () =>
             set((state) => {
-              state.notifications.forEach((n) => {
+              state.notifications.forEach((n: Notification) => {
                 n.read = true;
               });
               state.unreadNotificationCount = 0;

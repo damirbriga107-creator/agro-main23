@@ -241,9 +241,29 @@ const Dashboard: React.FC = () => {
           </div>
           
           {/* Recent Transactions */}
-          <div className="animate-fadeInUp stagger-4">
-            <RecentTransactions transactions={transactions || []} />
-          </div>
+              <div className="animate-fadeInUp stagger-4">
+                {/**
+                 * RecentTransactions expects a simplified Transaction shape used by the UI.
+                 * Map the API Transaction type to the UI shape here to keep typing strict.
+                 */}
+                {(() => {
+                  const mapped = (transactions || []).map((t) => ({
+                    id: t.id,
+                    type: t.transactionType === 'INCOME' ? 'income' : 'expense',
+                    amount: t.amount,
+                    description: t.description || '',
+                    status: 'completed',
+                    createdAt: t.createdAt,
+                    date: t.transactionDate,
+                    category: t.category?.name,
+                    farmName: t.farm?.name,
+                    paymentMethod: t.paymentMethod,
+                    currency: 'USD',
+                  }));
+
+                  return <RecentTransactions transactions={mapped} />;
+                })()}
+              </div>
           
           {/* Device Status */}
           <div className="animate-fadeInUp stagger-5">

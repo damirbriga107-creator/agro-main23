@@ -196,7 +196,8 @@ const FinancialDashboard: React.FC = () => {
 
   // WebSocket connection for real-time updates
   const { isConnected, lastEvent } = useFinancialWebSocket({
-    farmId: user?.farmIds?.[0],
+    // user.farms is not present on the Auth user type; fallback to user's farmName or undefined
+    farmId: (user as any)?.farmId || (user as any)?.farmName || undefined,
     subscriptions: ['transactions', 'budgets', 'reports'],
     autoConnect: true
   });
@@ -205,30 +206,22 @@ const FinancialDashboard: React.FC = () => {
   React.useEffect(() => {
     if (lastEvent) {
       const { type } = lastEvent;
-      
+
       if (type.includes('transaction')) {
         queryClient.invalidateQueries(['financial-metrics']);
         queryClient.invalidateQueries(['recent-transactions']);
       }
-      
+
       if (type.includes('budget')) {
         queryClient.invalidateQueries(['active-budgets']);
         queryClient.invalidateQueries(['financial-metrics']);
       }
-      
+
       if (type.includes('summary')) {
         queryClient.invalidateQueries(['financial-metrics']);
       }
     }
   }, [lastEvent, queryClient]);
-  const queryClient = useQueryClient();
-
-  // WebSocket connection for real-time updates
-  const { isConnected, lastEvent } = useFinancialWebSocket({
-    farmId: user?.farmIds?.[0],
-    subscriptions: ['transactions', 'budgets', 'reports'],
-    autoConnect: true
-  });
 
   // Fetch financial metrics
   const { data: metrics, isLoading: metricsLoading, error: metricsError } = useQuery<FinancialMetrics>(
