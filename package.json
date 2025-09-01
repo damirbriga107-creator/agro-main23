@@ -59,7 +59,7 @@
     "mongodb": "^6.19.0",
     "mongoose": "^8.18.0",
     "prettier": "^3.6.2",
-    "typescript": "^5.3.2"
+    "typescript": "^5.9.2"
   },
   "lint-staged": {
     "*.{js,ts,tsx,json,md}": [
