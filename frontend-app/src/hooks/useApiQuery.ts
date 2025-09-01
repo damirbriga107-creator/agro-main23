@@ -140,7 +140,7 @@ export function useApiMutation<TData = unknown, TError = ApiError, TVariables = 
       
       return options.onMutate?.(variables) as any;
     },
-    onSuccess: (data, variables, context) => {
+  onSuccess: (data, variables, context: any) => {
       // Invalidate and refetch queries
       invalidateQueries.forEach((queryKey) => {
         queryClient.invalidateQueries(queryKey);
@@ -153,7 +153,7 @@ export function useApiMutation<TData = unknown, TError = ApiError, TVariables = 
 
       onSuccess?.(data, variables, context);
     },
-    onError: (error, variables, context) => {
+  onError: (error, variables, context: any) => {
       console.error('API Mutation Error:', error);
 
       // Rollback optimistic update
@@ -172,7 +172,7 @@ export function useApiMutation<TData = unknown, TError = ApiError, TVariables = 
 
       onError?.(error, variables, context);
     },
-    onSettled: (data, error, variables, context) => {
+  onSettled: (data, error, variables, context: any) => {
       // Invalidate queries on settlement (success or error)
       invalidateQueries.forEach((queryKey) => {
         queryClient.invalidateQueries(queryKey);

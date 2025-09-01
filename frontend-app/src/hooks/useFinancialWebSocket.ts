@@ -46,7 +46,7 @@ export const useFinancialWebSocket = (
   options: UseFinancialWebSocketOptions = {}
 ): UseFinancialWebSocketReturn => {
   const { farmId, subscriptions = [], autoConnect = true } = options;
-  const { user, getToken } = useAuth();
+  const { user } = useAuth();
   
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -64,7 +64,8 @@ export const useFinancialWebSocket = (
       return;
     }
 
-    const token = getToken();
+    // Try to read token from localStorage; getToken not available on AuthContext in some setups
+    const token = localStorage.getItem('accessToken');
     if (!token) {
       console.warn('No authentication token available for WebSocket connection');
       return;
@@ -102,7 +103,7 @@ export const useFinancialWebSocket = (
       // Attempt to reconnect after a delay
       if (reason === 'io server disconnect') {
         // Server disconnected, try to reconnect
-        reconnectTimeoutRef.current = setTimeout(() => {
+        reconnectTimeoutRef.current = window.setTimeout(() => {
           connect();
         }, 5000);
       }

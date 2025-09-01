@@ -314,7 +314,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 };
 
 // Hook for confirmation modal
-export const useConfirmationModal = () => {
+const useConfirmationModal = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [config, setConfig] = useState<Omit<ConfirmationModalProps, 'isOpen' | 'onClose'> | null>(null);
 
