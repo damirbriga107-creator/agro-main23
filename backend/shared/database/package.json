@@ -1,0 +1,46 @@
+{
+  "name": "@daorsagro/database",
+  "version": "1.0.0",
+  "description": "Shared database utilities and migrations for DaorsAgro platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "clean": "rimraf dist",
+    "migrate": "node dist/migrate.js",
+    "seed": "node dist/seed.js",
+    "reset": "node dist/reset.js",
+    "status": "node dist/status.js",
+    "create-migration": "node dist/create-migration.js",
+    "type-check": "tsc --noEmit"
+  },
+  "files": [
+    "dist/**/*",
+    "migrations/**/*",
+    "seeds/**/*"
+  ],
+  "dependencies": {
+    "pg": "^8.11.3",
+    "mongodb": "^6.3.0",
+    "redis": "^4.6.11",
+    "@clickhouse/client": "^0.2.5",
+    "@elastic/elasticsearch": "^8.11.0",
+    "uuid": "^9.0.1",
+    "bcryptjs": "^2.4.3",
+    "chalk": "^5.3.0",
+    "@daorsagro/types": "workspace:*",
+    "@daorsagro/config": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/pg": "^8.10.9",
+    "@types/uuid": "^9.0.7",
+    "@types/bcryptjs": "^2.4.6",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.2"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  }
+}
