@@ -68,9 +68,9 @@ const Dashboard: React.FC = () => {
     page: transactionPage,
     goToPage: goToTransactionPage,
     pagination: transactionPagination,
-  } = usePaginatedQuery({
+  } = usePaginatedQuery<import('../types/financial').Transaction>({
     baseQueryKey: ['recent-transactions', selectedFarm?.id || ''],
-  queryFn: (page, limit) => financialApi.getTransactions({ page, limit }),
+    queryFn: (page, limit) => financialApi.getTransactions({ page, limit }),
     pageSize: 10,
     enabled: Boolean(selectedFarm?.id),
   });
@@ -353,10 +353,9 @@ const Dashboard: React.FC = () => {
                     }
                   />
                 ) : (
-                  transactions.slice(0, 5).map((t, index) => {
-                    const transaction = t as import('../types/financial').Transaction;
+                  transactions.slice(0, 5).map((transaction, index) => {
                     return (
-                    <DataTable.Row key={transaction.id || index} data={transaction}>
+                    <DataTable.Row key={(transaction as any).id || index} data={transaction}>
                       <DataTable.Cell>
                         {transaction.transactionDate ? new Date(transaction.transactionDate).toLocaleDateString() : '-'}
                       </DataTable.Cell>
