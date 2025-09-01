@@ -132,7 +132,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               {/* Mobile menu button */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="lg:hidden p-2 text-neutral-500 hover:text-neutral-700 rounded-xl hover:bg-neutral-100 transition-all duration-200"
+                className="lg:hidden p-3 text-neutral-500 hover:text-neutral-700 rounded-xl hover:bg-neutral-100 transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
                 {isMenuOpen ? (
                   <XMarkIcon className="h-6 w-6" />

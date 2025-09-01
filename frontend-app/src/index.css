@@ -322,11 +322,13 @@
                 linear-gradient(135deg, var(--neutral-50) 0%, var(--primary-50) 100%);
   }
   
-  /* Enhanced buttons with animations */
+  /* Enhanced buttons with animations and mobile optimizations */
   .btn {
     @apply inline-flex items-center justify-center px-6 py-3 text-sm font-semibold rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 transform active:scale-95;
     position: relative;
     overflow: hidden;
+    min-height: 44px; /* Minimum touch target for accessibility */
+    min-width: 44px; /* Ensure button remains usable on mobile */
   }
   
   .btn::before {
