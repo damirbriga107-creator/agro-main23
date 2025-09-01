@@ -46,3 +46,45 @@
 - See `README.md` in the root and in each major directory for more details.
 - Architecture diagram: `agro-main/daorsagro_architecture.png`
 - For onboarding, see `Backend-Specifications.md` and `Frontend-Specifications.md`.
+
+## How to run (dev)
+
+- From the repository root (PowerShell), recommended sequence:
+
+```powershell
+# 1) Verify Node & npm
+node -v; npm -v
+
+# 2) Install root deps
+cd C:\Users\User\Downloads\agro-main
+npm install
+
+# 3) Install service/frontend deps (optional but faster to run once)
+npm --prefix backend/api-gateway install
+npm --prefix frontend-app install
+
+# 4) Start development servers (root script runs both in parallel)
+npm run dev
+```
+
+- If you prefer to run components separately (debugging):
+
+```powershell
+# Start the API Gateway (in its folder)
+cd backend\api-gateway
+npm run dev   # runs nodemon src/index.ts
+
+# Start the frontend (in its folder)
+cd ..\..\frontend-app
+npm run dev   # runs vite
+```
+
+- Common issues and fixes:
+	- "npx canceled" or interactive prompts: run `npm install` first and retry `npx vite` / `npx nodemon`.
+	- Port conflicts: frontend defaults to Vite port 5173, API gateway to 3000. Use `env PORT=` or edit service config.
+	- Missing workspace scripts: some commands use `--workspace`; ensure Node/npm versions meet `package.json` `engines`.
+	- Permission/Windows path issues: use PowerShell native commands (escape paths) and run the shell as admin if required.
+
+- Where to look for logs:
+	- Frontend: terminal running Vite; also check `frontend-app/dist` after `npm run build`.
+	- Backend: `backend/api-gateway` console (nodemon) and `logs/` if services write to files (see `winston` config).
