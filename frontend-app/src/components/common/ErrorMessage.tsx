@@ -5,6 +5,7 @@ interface ErrorMessageProps {
   title: string;
   message: string;
   onRetry?: () => void;
+  onClose?: () => void;
   type?: 'error' | 'warning';
 }
 
@@ -12,6 +13,7 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({
   title, 
   message, 
   onRetry,
+  onClose,
   type = 'error'
 }) => {
   const Icon = type === 'error' ? XCircleIcon : ExclamationTriangleIcon;
@@ -20,7 +22,7 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({
   const bgColor = type === 'error' ? 'bg-red-50' : 'bg-yellow-50';
 
   return (
-    <div className={`rounded-lg border ${borderColor} ${bgColor} p-6`}>
+    <div className={`rounded-lg border ${borderColor} ${bgColor} p-6 relative`}>
       <div className="flex items-start">
         <Icon className={`h-6 w-6 ${iconColor} mt-0.5`} />
         <div className="ml-3 flex-1">
@@ -38,6 +40,13 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({
           )}
         </div>
       </div>
+      {onClose && (
+        <div className="absolute top-3 right-3">
+          <button onClick={onClose} aria-label="Close" className="text-gray-400 hover:text-gray-600">
+            ×
+          </button>
+        </div>
+      )}
     </div>
   );
 };

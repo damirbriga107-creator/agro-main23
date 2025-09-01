@@ -7,7 +7,7 @@ import { DocumentList } from '../components/documents/DocumentList';
 import { DocumentFilters } from '../components/documents/DocumentFilters';
 import { DocumentStats } from '../components/documents/DocumentStats';
 import { DocumentViewer } from '../components/documents/DocumentViewer';
-import { api } from '../services/api';
+import api from '../services/api';
 
 // Types for Document management
 interface Document {
@@ -182,7 +182,7 @@ export const Documents: React.FC = () => {
     }
   };
 
-  const handleDownloadDocument = async (document: Document) => {
+  const handleDownloadDocument = async (doc: Document) => {
     try {
       const response = await api.get(`/documents/${document._id}/download`, {
         responseType: 'blob'
@@ -192,7 +192,7 @@ export const Documents: React.FC = () => {
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', document.fileName);
+      link.setAttribute('download', doc.fileName);
       document.body.appendChild(link);
       link.click();
       link.remove();
