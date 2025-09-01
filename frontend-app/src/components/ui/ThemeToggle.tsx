@@ -1,7 +1,12 @@
 import React from 'react';
 import { MoonIcon, SunIcon } from '@heroicons/react/24/outline';
 import { useTheme } from '../../contexts/ThemeContext';
-import { cn } from '../../lib/design-system';
+import { clsx } from '../../lib/design-system';
+
+// Utility function for combining class names like clsx
+const cn = (...classes: (string | undefined | null | false)[]): string => {
+  return clsx(...classes);
+};
 
 interface ThemeToggleProps {
   className?: string;
