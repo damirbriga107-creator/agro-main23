@@ -4,6 +4,14 @@
   "description": "DaorsAgro - Complete Agricultural Financial Management Platform",
   "private": true,
   "workspaces": [
+    "backend/shared/types",
+    "backend/shared/config",
+    "backend/shared/utils",
+    "backend/shared/database",
+    "backend/api-gateway",
+    "backend/services/*",
+    "frontend-app",
+    "daorsagro-frontend"
   ],
   "scripts": {
     "install:all": "npm install",
@@ -21,10 +29,16 @@
     "docker:restart": "docker-compose restart",
     "validate": "node scripts/validate-setup.js",
     "health:check": "node scripts/health-check.js",
-    "setup:dev": "npm run validate && npm run docker:up && npm run health:check",
+    "setup:dev": "npm run validate && npm run docker:up && npm run health:check && node scripts/setup-database.js",
+    "setup:db": "node scripts/setup-database.js",
+    "db:init": "npm run init-db --workspace=backend/shared/database",
     "db:migrate": "npm run migrate --workspace=backend/shared/database",
+    "db:migrate:rollback": "npm run migrate:rollback --workspace=backend/shared/database",
+    "db:migrate:status": "npm run migrate:status --workspace=backend/shared/database",
     "db:seed": "npm run seed --workspace=backend/shared/database",
-    "db:setup": "node backend/scripts/setup-database-schemas.js",
+    "db:seed:clear": "npm run seed:clear --workspace=backend/shared/database",
+    "db:validate": "npm run validate --workspace=backend/shared/database",
+    "db:setup": "npm run db:init",
     "test:endpoints": "node backend/scripts/test-dashboard-services.js",
     "test:integration": "mocha backend/tests/dashboard-integration.test.ts --require ts-node/register"
   },

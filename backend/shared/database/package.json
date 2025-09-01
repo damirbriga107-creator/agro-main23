@@ -8,12 +8,15 @@
     "build": "tsc",
     "build:watch": "tsc --watch",
     "clean": "rimraf dist",
-    "migrate": "node dist/migrate.js",
-    "seed": "node dist/seed.js",
-    "reset": "node dist/reset.js",
-    "status": "node dist/status.js",
-    "create-migration": "node dist/create-migration.js",
-    "type-check": "tsc --noEmit"
+    "migrate": "npm run build && node dist/migrate.js",
+    "migrate:rollback": "npm run build && node dist/migrate.js rollback",
+    "migrate:status": "npm run build && node dist/migrate.js status",
+    "seed": "npm run build && node dist/seed.js",
+    "seed:clear": "npm run build && node dist/seed.js clear",
+    "init-db": "npm run build && node dist/init-database.js",
+    "validate": "npm run build && node dist/validate-schema.js",
+    "type-check": "tsc --noEmit",
+    "dev": "ts-node-dev --respawn --transpile-only src/init-database.ts"
   },
   "files": [
     "dist/**/*",
