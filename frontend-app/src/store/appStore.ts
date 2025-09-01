@@ -316,7 +316,7 @@ export const useAppStore = create<AppState & AppActions>()(
           
           updateFarm: (farmId: string, updates: Partial<Farm>) =>
             set((state) => {
-              const farmIndex = state.farms.findIndex((f) => f.id === farmId);
+              const farmIndex = state.farms.findIndex((f: Farm) => f.id === farmId);
               if (farmIndex !== -1) {
                 state.farms[farmIndex] = { ...state.farms[farmIndex], ...updates };
               }
@@ -324,7 +324,7 @@ export const useAppStore = create<AppState & AppActions>()(
           
           removeFarm: (farmId: string) =>
             set((state) => {
-              state.farms = state.farms.filter((f) => f.id !== farmId);
+              state.farms = state.farms.filter((f: Farm) => f.id !== farmId);
               if (state.selectedFarmId === farmId) {
                 state.selectedFarmId = null;
               }
@@ -338,7 +338,7 @@ export const useAppStore = create<AppState & AppActions>()(
           // Crop actions
           addCrop: (farmId: string, crop: Crop) =>
             set((state) => {
-              const farm = state.farms.find((f) => f.id === farmId);
+              const farm = state.farms.find((f: Farm) => f.id === farmId);
               if (farm) {
                 farm.crops.push(crop);
               }
@@ -346,7 +346,7 @@ export const useAppStore = create<AppState & AppActions>()(
           
           updateCrop: (farmId: string, cropId: string, updates: Partial<Crop>) =>
             set((state) => {
-              const farm = state.farms.find((f) => f.id === farmId);
+              const farm = state.farms.find((f: Farm) => f.id === farmId);
               if (farm) {
                 const cropIndex = farm.crops.findIndex((c) => c.id === cropId);
                 if (cropIndex !== -1) {
@@ -357,7 +357,7 @@ export const useAppStore = create<AppState & AppActions>()(
           
           removeCrop: (farmId: string, cropId: string) =>
             set((state) => {
-              const farm = state.farms.find((f) => f.id === farmId);
+              const farm = state.farms.find((f: Farm) => f.id === farmId);
               if (farm) {
                 farm.crops = farm.crops.filter((c) => c.id !== cropId);
               }
@@ -366,7 +366,7 @@ export const useAppStore = create<AppState & AppActions>()(
           // Financial actions
           addExpense: (farmId: string, cropId: string, expense: Expense) =>
             set((state) => {
-              const farm = state.farms.find((f) => f.id === farmId);
+              const farm = state.farms.find((f: Farm) => f.id === farmId);
               const crop = farm?.crops.find((c) => c.id === cropId);
               if (crop) {
                 crop.financials.expenses.push(expense);
@@ -493,23 +493,23 @@ export const useAppStore = create<AppState & AppActions>()(
           // Computed getters
           getSelectedFarm: () => {
             const state = get();
-            return state.selectedFarmId ? state.farms.find((f) => f.id === state.selectedFarmId) || null : null;
+            return state.selectedFarmId ? state.farms.find((f: Farm) => f.id === state.selectedFarmId) || null : null;
           },
           
           getFarmById: (id: string) => {
             const state = get();
-            return state.farms.find((f) => f.id === id) || null;
+            return state.farms.find((f: Farm) => f.id === id) || null;
           },
           
           getCropsByFarm: (farmId: string) => {
             const state = get();
-            const farm = state.farms.find((f) => f.id === farmId);
+            const farm = state.farms.find((f: Farm) => f.id === farmId);
             return farm?.crops || [];
           },
           
           getTotalFarmValue: (farmId: string) => {
             const state = get();
-            const farm = state.farms.find((f) => f.id === farmId);
+            const farm = state.farms.find((f: Farm) => f.id === farmId);
             if (!farm) return 0;
             
             return farm.crops.reduce((total, crop) => {
