@@ -1,14 +1,13 @@
 {
   "name": "@daorsagro/types",
   "version": "1.0.0",
-  "description": "Shared TypeScript type definitions for DaorsAgro platform",
+  "description": "Shared TypeScript types for DaorsAgro platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
     "clean": "rimraf dist",
-    "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit"
   },
   "files": [
