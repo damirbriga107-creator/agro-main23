@@ -221,14 +221,14 @@ export const Documents: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className=\"w-4 h-4 text-green-500\" />;
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'processing':
       case 'pending':
-        return <Clock className=\"w-4 h-4 text-yellow-500\" />;
+        return <Clock className="w-4 h-4 text-yellow-500" />;
       case 'failed':
-        return <XCircle className=\"w-4 h-4 text-red-500\" />;
+        return <XCircle className="w-4 h-4 text-red-500" />;
       default:
-        return <AlertCircle className=\"w-4 h-4 text-gray-500\" />;
+        return <AlertCircle className="w-4 h-4 text-gray-500" />;
     }
   };
 
@@ -249,78 +249,79 @@ export const Documents: React.FC = () => {
 
   if (loading && documents.length === 0) {
     return (
-      <div className=\"flex items-center justify-center min-h-screen\">
+      <div className="flex items-center justify-center min-h-screen">
         <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <div className=\"min-h-screen bg-gray-50 p-6\">
-      <div className=\"max-w-7xl mx-auto\">
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className=\"bg-white rounded-lg shadow-sm p-6 mb-6\">
-          <div className=\"flex items-center justify-between mb-6\">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className=\"text-3xl font-bold text-gray-900 flex items-center gap-3\">
-                <FileText className=\"w-8 h-8 text-blue-600\" />
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                <FileText className="w-8 h-8 text-blue-600" />
                 Documents
               </h1>
-              <p className=\"text-gray-600 mt-2\">
+              <p className="text-gray-600 mt-2">
                 Manage your farm documents, contracts, and files
               </p>
             </div>
             <button
               onClick={() => setShowUploader(true)}
-              className=\"flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors\"
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <Upload className=\"w-5 h-5\" />
+              <Upload className="w-5 h-5" />
               Upload Documents
             </button>
           </div>
-
++
           {/* Stats Summary */}
           {stats && (
-            <div className=\"grid grid-cols-1 md:grid-cols-4 gap-4 mb-6\">
-              <div className=\"bg-blue-50 p-4 rounded-lg\">
-                <div className=\"flex items-center gap-2\">
-                  <FileText className=\"w-5 h-5 text-blue-600\" />
-                  <span className=\"text-sm text-blue-600 font-medium\">Total Documents</span>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                  <span className="text-sm text-blue-600 font-medium">Total Documents</span>
                 </div>
-                <p className=\"text-2xl font-bold text-blue-900 mt-1\">{stats.totalDocuments}</p>
+                <p className="text-2xl font-bold text-blue-900 mt-1">{stats.totalDocuments}</p>
               </div>
-              <div className=\"bg-green-50 p-4 rounded-lg\">
-                <div className=\"flex items-center gap-2\">
-                  <FolderOpen className=\"w-5 h-5 text-green-600\" />
-                  <span className=\"text-sm text-green-600 font-medium\">Storage Used</span>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <FolderOpen className="w-5 h-5 text-green-600" />
+                  <span className="text-sm text-green-600 font-medium">Storage Used</span>
                 </div>
-                <p className=\"text-2xl font-bold text-green-900 mt-1\">{formatFileSize(stats.totalSize)}</p>
+                <p className="text-2xl font-bold text-green-900 mt-1">{formatFileSize(stats.totalSize)}</p>
               </div>
-              <div className=\"bg-yellow-50 p-4 rounded-lg\">
-                <div className=\"flex items-center gap-2\">
-                  <Upload className=\"w-5 h-5 text-yellow-600\" />
-                  <span className=\"text-sm text-yellow-600 font-medium\">Recent Uploads</span>
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-yellow-600" />
+                  <span className="text-sm text-yellow-600 font-medium">Recent Uploads</span>
                 </div>
-                <p className=\"text-2xl font-bold text-yellow-900 mt-1\">{stats.recentUploads}</p>
+                <p className="text-2xl font-bold text-yellow-900 mt-1">{stats.recentUploads}</p>
               </div>
-              <div className=\"bg-purple-50 p-4 rounded-lg\">
-                <div className=\"flex items-center gap-2\">
-                  <CheckCircle className=\"w-5 h-5 text-purple-600\" />
-                  <span className=\"text-sm text-purple-600 font-medium\">Storage Usage</span>
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-purple-600" />
+                  <span className="text-sm text-purple-600 font-medium">Storage Usage</span>
                 </div>
-                <p className=\"text-2xl font-bold text-purple-900 mt-1\">{stats.storageUsage.percentage.toFixed(1)}%</p>
++
+                <p className="text-2xl font-bold text-purple-900 mt-1">{stats.storageUsage.percentage.toFixed(1)}%</p>
               </div>
             </div>
           )}
 
           {/* Search and Filters */}
-          <div className=\"flex items-center gap-4 mb-4\">
-            <div className=\"flex-1 relative\">
-              <Search className=\"w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400\" />
+          <div className="flex items-center gap-4 mb-4">
+            <div className="flex-1 relative">
+              <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
-                type=\"text\"
-                placeholder=\"Search documents by name...\"
-                className=\"w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent\"
+                type="text"
+                placeholder="Search documents by name..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={searchQuery.fileName || ''}
                 onChange={(e) => handleSearch(e.target.value)}
               />
@@ -333,11 +334,11 @@ export const Documents: React.FC = () => {
                   : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
               }`}
             >
-              <Filter className=\"w-5 h-5\" />
+              <Filter className="w-5 h-5" />
               Filters
             </button>
           </div>
-
++
           {/* Filters Panel */}
           {showFilters && (
             <DocumentFilters
@@ -347,63 +348,65 @@ export const Documents: React.FC = () => {
             />
           )}
         </div>
-
++
         {/* Error Message */}
         {error && (
-          <div className=\"mb-6\">
+          <div className="mb-6">
             <ErrorMessage message={error} onClose={() => setError(null)} />
           </div>
         )}
-
++
         {/* Document List */}
-        <div className=\"bg-white rounded-lg shadow-sm\">
+        <div className="bg-white rounded-lg shadow-sm">
           {loading ? (
-            <div className=\"flex items-center justify-center py-12\">
+            <div className="flex items-center justify-center py-12">
               <LoadingSpinner />
             </div>
           ) : documents.length === 0 ? (
-            <div className=\"text-center py-12\">
-              <FileText className=\"w-16 h-16 text-gray-300 mx-auto mb-4\" />
-              <h3 className=\"text-lg font-medium text-gray-900 mb-2\">No documents found</h3>
-              <p className=\"text-gray-500 mb-4\">
+            <div className="text-center py-12">
+              <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No documents found</h3>
+              <p className="text-gray-500 mb-4">
                 {searchQuery.fileName ? 'Try adjusting your search criteria' : 'Start by uploading your first document'}
               </p>
++ 
               <button
                 onClick={() => setShowUploader(true)}
-                className=\"inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors\"
+                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
               >
-                <Upload className=\"w-5 h-5\" />
+                <Upload className="w-5 h-5" />
                 Upload Documents
               </button>
             </div>
           ) : (
-            <div className=\"p-6\">
+            <div className="p-6">
               {/* Results Info */}
-              <div className=\"flex items-center justify-between mb-4\">
-                <p className=\"text-sm text-gray-600\">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-gray-600">
                   Showing {((searchResults?.currentPage || 1) - 1) * (searchQuery.limit || 20) + 1} to{' '}
                   {Math.min((searchResults?.currentPage || 1) * (searchQuery.limit || 20), searchResults?.totalCount || 0)} of{' '}
                   {searchResults?.totalCount || 0} documents
                 </p>
-                <div className=\"flex items-center gap-2\">
++
+                <div className="flex items-center gap-2">
                   <select
                     value={`${searchQuery.sortBy}-${searchQuery.sortOrder}`}
                     onChange={(e) => {
                       const [sortBy, sortOrder] = e.target.value.split('-');
                       handleFilterChange({ sortBy, sortOrder: sortOrder as 'asc' | 'desc' });
                     }}
-                    className=\"border border-gray-300 rounded-lg px-3 py-1 text-sm\"
+                    className="border border-gray-300 rounded-lg px-3 py-1 text-sm"
                   >
-                    <option value=\"uploadedAt-desc\">Newest First</option>
-                    <option value=\"uploadedAt-asc\">Oldest First</option>
-                    <option value=\"fileName-asc\">Name A-Z</option>
-                    <option value=\"fileName-desc\">Name Z-A</option>
-                    <option value=\"size-desc\">Largest First</option>
-                    <option value=\"size-asc\">Smallest First</option>
+                    <option value="uploadedAt-desc">Newest First</option>
+                    <option value="uploadedAt-asc">Oldest First</option>
+                    <option value="fileName-asc">Name A-Z</option>
+                    <option value="fileName-desc">Name Z-A</option>
+                    <option value="size-desc">Largest First</option>
+                    <option value="size-asc">Smallest First</option>
                   </select>
                 </div>
               </div>
-
++
               {/* Document List */}
               <DocumentList
                 documents={documents}
@@ -412,18 +415,18 @@ export const Documents: React.FC = () => {
                 onDelete={handleDeleteDocument}
                 viewMode={viewMode}
               />
-
++
               {/* Pagination */}
               {searchResults && searchResults.totalPages > 1 && (
-                <div className=\"flex items-center justify-center gap-2 mt-6\">
+                <div className="flex items-center justify-center gap-2 mt-6">
                   <button
                     onClick={() => handlePageChange(searchResults.currentPage - 1)}
                     disabled={!searchResults.hasPreviousPage}
-                    className=\"px-3 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50\"
+                    className="px-3 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                   >
                     Previous
                   </button>
-                  
++
                   {Array.from({ length: Math.min(5, searchResults.totalPages) }, (_, i) => {
                     const page = i + 1;
                     return (
@@ -438,22 +441,22 @@ export const Documents: React.FC = () => {
                       >
                         {page}
                       </button>
-                    );
++                    );
                   })}
-                  
++
                   <button
                     onClick={() => handlePageChange(searchResults.currentPage + 1)}
                     disabled={!searchResults.hasNextPage}
-                    className=\"px-3 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50\"
+                    className="px-3 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                   >
                     Next
                   </button>
                 </div>
               )}
             </div>
-          )}
++          )}
         </div>
-
++
         {/* Document Uploader Modal */}
         {showUploader && (
           <DocumentUploader
@@ -464,7 +467,7 @@ export const Documents: React.FC = () => {
             setUploading={setUploading}
           />
         )}
-
++
         {/* Document Viewer Modal */}
         {selectedDocument && (
           <DocumentViewer
@@ -477,7 +480,7 @@ export const Documents: React.FC = () => {
             }}
           />
         )}
-      </div>
++      </div>
     </div>
-  );
++  );
 };

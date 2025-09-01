@@ -145,34 +145,25 @@ export const DocumentList: React.FC<DocumentListProps> = ({
 
   if (viewMode === 'grid') {
     return (
-      <div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4\">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {documents.map((document) => (
-          <div
-            key={document._id}
-            className=\"bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow\"
-          >
+          <div key={document._id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
             {/* Document Icon and Status */}
             <div className=\"flex items-center justify-between mb-3\">
               <div className=\"flex items-center gap-2\">
                 {getFileIcon(document.mimeType)}
                 <div className=\"flex items-center gap-1\">
-                  {getStatusIcon(document.processingStatus)}
-                  <span className=\"text-xs text-gray-500\">
-                    {getStatusText(document.processingStatus)}
-                  </span>
+                      {getStatusIcon(document.processingStatus)}
+                      <span className="text-xs text-gray-500">{getStatusText(document.processingStatus)}</span>
                 </div>
               </div>
               {document.isPublic && (
-                <span className=\"text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded\">
-                  Public
-                </span>
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Public</span>
               )}
             </div>
 
             {/* File Name */}
-            <h3 className=\"font-medium text-gray-900 mb-2 truncate\" title={document.fileName}>
-              {document.fileName}
-            </h3>
+            <h3 className="font-medium text-gray-900 mb-2 truncate" title={document.fileName}>{document.fileName}</h3>
 
             {/* File Info */}
             <div className=\"text-xs text-gray-500 mb-3 space-y-1\">
@@ -191,54 +182,34 @@ export const DocumentList: React.FC<DocumentListProps> = ({
 
             {/* Tags */}
             {document.tags.length > 0 && (
-              <div className=\"mb-3\">
-                <div className=\"flex flex-wrap gap-1\">
+              <div className="mb-3">
+                <div className="flex flex-wrap gap-1">
                   {document.tags.slice(0, 2).map((tag, index) => (
-                    <span
-                      key={index}
-                      className=\"inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded\"
-                    >
-                      <Tag className=\"w-3 h-3\" />
+                    <span key={index} className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
+                      <Tag className="w-3 h-3" />
                       {tag}
                     </span>
                   ))}
-                  {document.tags.length > 2 && (
-                    <span className=\"text-xs text-gray-500\">
-                      +{document.tags.length - 2} more
-                    </span>
-                  )}
+                  {document.tags.length > 2 && <span className="text-xs text-gray-500">+{document.tags.length - 2} more</span>}
                 </div>
               </div>
             )}
 
             {/* Description */}
-            {document.description && (
-              <p className=\"text-xs text-gray-600 mb-3 line-clamp-2\">
-                {document.description}
-              </p>
-            )}
+            {document.description && <p className="text-xs text-gray-600 mb-3 line-clamp-2">{document.description}</p>}
 
             {/* Actions */}
             <div className=\"flex items-center justify-between pt-3 border-t border-gray-100\">
-              <button
-                onClick={() => onView(document)}
-                className=\"flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm\"
-              >
-                <Eye className=\"w-4 h-4\" />
+              <button onClick={() => onView(document)} className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm">
+                <Eye className="w-4 h-4" />
                 View
               </button>
               <div className=\"flex items-center gap-2\">
-                <button
-                  onClick={() => onDownload(document)}
-                  className=\"flex items-center gap-1 text-gray-600 hover:text-gray-800 text-sm\"
-                >
-                  <Download className=\"w-4 h-4\" />
+                <button onClick={() => onDownload(document)} className="flex items-center gap-1 text-gray-600 hover:text-gray-800 text-sm">
+                  <Download className="w-4 h-4" />
                 </button>
-                <button
-                  onClick={() => onDelete(document._id)}
-                  className=\"flex items-center gap-1 text-red-600 hover:text-red-800 text-sm\"
-                >
-                  <Trash2 className=\"w-4 h-4\" />
+                <button onClick={() => onDelete(document._id)} className="flex items-center gap-1 text-red-600 hover:text-red-800 text-sm">
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -252,62 +223,38 @@ export const DocumentList: React.FC<DocumentListProps> = ({
   return (
     <div className=\"space-y-2\">
       {/* Header */}
-      <div className=\"grid grid-cols-12 gap-4 p-3 text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-200\">
-        <div className=\"col-span-4\">Document</div>
-        <div className=\"col-span-2\">Type</div>
-        <div className=\"col-span-2\">Category</div>
-        <div className=\"col-span-1\">Size</div>
-        <div className=\"col-span-2\">Uploaded</div>
-        <div className=\"col-span-1\">Actions</div>
+      <div className="grid grid-cols-12 gap-4 p-3 text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-200">
+        <div className="col-span-4">Document</div>
+        <div className="col-span-2">Type</div>
+        <div className="col-span-2">Category</div>
+        <div className="col-span-1">Size</div>
+        <div className="col-span-2">Uploaded</div>
+        <div className="col-span-1">Actions</div>
       </div>
 
       {/* Document Rows */}
       {documents.map((document) => (
-        <div
-          key={document._id}
-          className=\"grid grid-cols-12 gap-4 p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow\"
-        >
+        <div key={document._id} className="grid grid-cols-12 gap-4 p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
           {/* Document Info */}
-          <div className=\"col-span-4 flex items-center gap-3\">
-            <div className=\"flex-shrink-0\">
-              {getFileIcon(document.mimeType)}
-            </div>
-            <div className=\"min-w-0 flex-1\">
-              <h3 className=\"font-medium text-gray-900 truncate\" title={document.fileName}>
-                {document.fileName}
-              </h3>
-              <div className=\"flex items-center gap-2 mt-1\">
+          <div className="col-span-4 flex items-center gap-3">
+            <div className="flex-shrink-0">{getFileIcon(document.mimeType)}</div>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-medium text-gray-900 truncate" title={document.fileName}>{document.fileName}</h3>
+              <div className="flex items-center gap-2 mt-1">
                 {getStatusIcon(document.processingStatus)}
-                <span className=\"text-xs text-gray-500\">
-                  {getStatusText(document.processingStatus)}
-                </span>
-                {document.isPublic && (
-                  <span className=\"text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded\">
-                    Public
-                  </span>
-                )}
+                <span className="text-xs text-gray-500">{getStatusText(document.processingStatus)}</span>
+                {document.isPublic && <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Public</span>}
               </div>
-              {document.description && (
-                <p className=\"text-xs text-gray-600 mt-1 line-clamp-1\">
-                  {document.description}
-                </p>
-              )}
+              {document.description && <p className="text-xs text-gray-600 mt-1 line-clamp-1">{document.description}</p>}
               {document.tags.length > 0 && (
-                <div className=\"flex flex-wrap gap-1 mt-1\">
+                <div className="flex flex-wrap gap-1 mt-1">
                   {document.tags.slice(0, 3).map((tag, index) => (
-                    <span
-                      key={index}
-                      className=\"inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded\"
-                    >
-                      <Tag className=\"w-3 h-3\" />
+                    <span key={index} className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
+                      <Tag className="w-3 h-3" />
                       {tag}
                     </span>
                   ))}
-                  {document.tags.length > 3 && (
-                    <span className=\"text-xs text-gray-500\">
-                      +{document.tags.length - 3}
-                    </span>
-                  )}
+                  {document.tags.length > 3 && <span className="text-xs text-gray-500">+{document.tags.length - 3}</span>}
                 </div>
               )}
             </div>

@@ -100,7 +100,7 @@ const Register: React.FC = () => {
 
   // Redirect if already authenticated
   if (isAuthenticated) {
-    return <Navigate to=\"/\" replace />;
+  return <Navigate to="/" replace />;
   }
   
   // Show success message if registration completed
