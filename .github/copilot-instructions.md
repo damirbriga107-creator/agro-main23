@@ -1,3 +1,40 @@
+# Copilot instructions — DaorsAgro (concise agent guide)
+
+This file tells an AI coding agent what's important to be productive in this repo. Keep edits small and run the TypeScript checks after changes.
+Quick commands (local dev)
+- Install deps: npm install (repo root)
+- Frontend type-check: npm --prefix frontend-app run type-check (runs tsc --noEmit)
+- Start dev (frontend): npm --prefix frontend-app run dev (Vite)
+- Start API gateway: npm --prefix backend/api-gateway run dev (nodemon)
+
+Architecture & where to look
+- API Gateway: backend/api-gateway/src — routing, proxy, service registration (index.ts) and service-discovery.service.ts.
+- Services: backend/services/<service>/src — each service is isolated; shared types in backend/shared/types.
+- Frontend: frontend-app/src — key files: frontend-app/src/services/api.ts (ApiClient and service wrappers), frontend-app/src/hooks/useApiQuery.ts (react-query wrappers), frontend-app/src/types (shared frontend types).
+Project-specific patterns agents must follow
+- ApiResponse wrapping: backend and ApiClient return ApiResponse<T>. Frontend service wrappers often unwrap resp.data — prefer consistent unwrapping in service wrappers (see frontend-app/src/services/api.ts getFinancialTransactions and financialApi.getTransactions).
+- React-query conventions: useApiQuery / usePaginatedQuery expect unwrapped payloads (see frontend-app/src/hooks/useApiQuery.ts). Align service return shapes to these hooks.
+- Types location: canonical shared backend types live in backend/shared/types; frontend-specific types live in frontend-app/src/types (e.g., financial.ts, auth.ts).
+- Websockets & auth: useFinancialWebSocket relies on tokens stored by AuthContext/localStorage — check frontend-app/src/hooks/useFinancialWebSocket.ts and AuthContext for token access patterns.
+
+Editing and adding services
+- To add a service: copy an existing backend/services/<service>, update package.json, Dockerfile, tsconfig, and register it in backend/api-gateway/src/index.ts services map and service-discovery.service.ts.
+- Health contract: new services must expose /health returning { status: 'healthy' } and propagate X-Request-ID for tracing.
+
+Tests & validation
+- Local fast gate: run frontend type-check (above) and run unit tests per service with npm run test --workspace=backend/services/<service>.
+- After code edits: run tsc --noEmit across affected TS projects and run unit tests for modified packages.
+
+Common quick fixes seen in this repo
+- Missing third-party types: temporary ambient declarations are used (frontend-app/src/types/heroicons.d.ts, socketio.d.ts).
+- ApiResponse vs unwrapped data: if call-sites see unknown/ApiResponse, either unwrap in the service wrapper or adjust hook signatures.
+
+Agent editing rules (short)
+- Make minimal, isolated changes. Run type-check after each file batch. Fix parse errors first (TSX/JSX) before deep type work.
+- When adding a new route/proxy, update service-discovery and metrics recording in backend/api-gateway.
+- Preserve error shapes from backend (ErrorHandlerMiddleware) and include requestId in logs/responses.
+
+If anything here is unclear or you want more examples (specific files to change, or a code patch to standardize ApiResponse unwrapping), tell me which area to expand.
 # Copilot Instructions for DaorsAgro Platform
 
 ## Project Overview
