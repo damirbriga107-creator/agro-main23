@@ -441,7 +441,7 @@ export const useAppStore = create<AppState & AppActions>()(
           
           removeNotification: (id: string) =>
             set((state) => {
-              const notificationIndex = state.notifications.findIndex((n) => n.id === id);
+              const notificationIndex = state.notifications.findIndex((n: Notification) => n.id === id);
               if (notificationIndex !== -1) {
                 const notification = state.notifications[notificationIndex];
                 if (!notification.read) {
@@ -465,7 +465,7 @@ export const useAppStore = create<AppState & AppActions>()(
           
           updateIoTDevice: (deviceId: string, updates: Partial<IoTDevice>) =>
             set((state) => {
-              const deviceIndex = state.iotDevices.findIndex((d) => d.id === deviceId);
+              const deviceIndex = state.iotDevices.findIndex((d: IoTDevice) => d.id === deviceId);
               if (deviceIndex !== -1) {
                 state.iotDevices[deviceIndex] = { ...state.iotDevices[deviceIndex], ...updates };
               }

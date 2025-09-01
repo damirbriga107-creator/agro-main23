@@ -222,8 +222,10 @@ export const clsx = (...classes: (string | undefined | null | false)[]): string 
 };
 
 // Color utility functions
-export const getColorVariant = (color: keyof typeof theme.colors, shade: keyof typeof theme.colors.primary = '500'): string => {
-  return theme.colors[color]?.[shade] || theme.colors.primary[shade];
+export const getColorVariant = (color: keyof typeof theme.colors, shade: string = '500'): string => {
+  // Shade is a string because different palettes have different keys
+  // Use optional chaining and fallbacks to avoid indexing errors
+  return (theme.colors as any)[color]?.[shade] || (theme.colors as any).primary?.[shade] || '#000';
 };
 
 // Animation helpers

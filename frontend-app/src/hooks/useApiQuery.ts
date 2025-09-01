@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from 'react-query';
 import { useState, useCallback } from 'react';
 import { useAppStore } from '../store/appStore';
+import type { AppState } from '../store/appStore';
 import toast from 'react-hot-toast';
 
 // Types
@@ -75,8 +76,8 @@ export function useApiQuery<TData = unknown, TError = ApiError>({
       console.error('API Query Error:', error);
       
       // Set error in store
-      const errorKey = queryKey[0] as keyof typeof useAppStore.getState.errors;
-      if (errorKey && typeof errorKey === 'string') {
+      const errorKey = String(queryKey[0]) as any;
+      if (errorKey) {
         setError(errorKey, error instanceof Error ? error.message : 'An unknown error occurred');
       }
       
@@ -124,7 +125,7 @@ export function useApiMutation<TData = unknown, TError = ApiError, TVariables = 
 
   return useMutation<TData, TError, TVariables>({
     mutationFn,
-    onMutate: async (variables) => {
+  onMutate: async (variables) => {
       // Optimistic update
       if (optimisticUpdate) {
         await queryClient.cancelQueries(optimisticUpdate.queryKey);
@@ -135,10 +136,10 @@ export function useApiMutation<TData = unknown, TError = ApiError, TVariables = 
           (oldData: any) => optimisticUpdate.updateFn(oldData, variables)
         );
         
-        return { previousData };
+        return { previousData } as any;
       }
       
-      return options.onMutate?.(variables);
+      return options.onMutate?.(variables) as any;
     },
     onSuccess: (data, variables, context) => {
       // Invalidate and refetch queries
@@ -185,7 +186,7 @@ export function useApiMutation<TData = unknown, TError = ApiError, TVariables = 
 }
 
 // Paginated Query Hook
-interface UsePaginatedQueryOptions<TData> extends Omit<UseApiQueryOptions<PaginatedResponse<TData>>, 'queryKey'> {
+interface UsePaginatedQueryOptions<TData> extends Omit<UseApiQueryOptions<PaginatedResponse<TData>>, 'queryKey' | 'queryFn'> {
   baseQueryKey: (string | number)[];
   queryFn: (page: number, limit: number) => Promise<PaginatedResponse<TData>>;
   initialPage?: number;
@@ -243,7 +244,7 @@ export function usePaginatedQuery<TData = unknown>({
 }
 
 // Infinite Query Hook
-interface UseInfiniteQueryOptions<TData> extends Omit<UseApiQueryOptions<PaginatedResponse<TData>>, 'queryKey'> {
+interface UseInfiniteQueryOptions<TData> extends Omit<UseApiQueryOptions<PaginatedResponse<TData>>, 'queryKey' | 'queryFn'> {
   baseQueryKey: (string | number)[];
   queryFn: (page: number, limit: number) => Promise<PaginatedResponse<TData>>;
   pageSize?: number;
