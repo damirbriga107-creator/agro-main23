@@ -119,9 +119,9 @@ export const Documents: React.FC = () => {
         }
       });
 
-      const response = await api.get(`/documents/search?${params.toString()}`);
-      setSearchResults(response.data.data);
-      setDocuments(response.data.data.documents);
+  const response = await api.get(`/documents/search?${params.toString()}`) as any;
+  setSearchResults((response.data as any).data);
+  setDocuments((response.data as any).data.documents);
     } catch (err) {
       setError('Failed to load documents. Please try again.');
       console.error('Error loading documents:', err);
@@ -132,8 +132,8 @@ export const Documents: React.FC = () => {
 
   const loadStats = async () => {
     try {
-      const response = await api.get('/documents/stats');
-      setStats(response.data.data);
+  const response = await api.get('/documents/stats') as any;
+  setStats((response.data as any).data);
     } catch (err) {
       console.error('Error loading document stats:', err);
     }
