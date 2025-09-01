@@ -1,0 +1,46 @@
+{
+  "name": "daorsagro-mcp-servers",
+  "version": "1.0.0",
+  "description": "MCP Servers for DaorsAgro Agricultural Management Platform",
+  "main": "index.js",
+  "scripts": {
+    "start:database": "node database-server.js",
+    "start:api": "node api-server.js",
+    "start:filesystem": "node filesystem-server.js",
+    "start:code-analysis": "node code-analysis-server.js",
+    "start:agricultural": "node agricultural-server.js",
+    "start:all": "concurrently \"npm run start:database\" \"npm run start:api\" \"npm run start:filesystem\" \"npm run start:code-analysis\" \"npm run start:agricultural\"",
+    "install:all": "npm install",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "express": "^4.18.2",
+    "axios": "^1.6.0",
+    "pg": "^8.11.0",
+    "mongodb": "^6.0.0",
+    "redis": "^4.6.0",
+    "glob": "^10.0.0",
+    "concurrently": "^8.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "@types/node": "^20.0.0",
+    "@types/express": "^4.17.0",
+    "@types/pg": "^8.10.0",
+    "@types/redis": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "agricultural",
+    "daorsagro",
+    "farm-management",
+    "ai-tools"
+  ],
+  "author": "DaorsAgro Team",
+  "license": "MIT"
+}
