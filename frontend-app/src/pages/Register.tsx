@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
+import {
+  EyeIcon,
+  EyeSlashIcon,
+  EnvelopeIcon,
+  LockClosedIcon,
+  UserIcon,
+  PhoneIcon,
+  MapPinIcon
+} from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import { RegisterData } from '../types/auth';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { LoadingSpinner } from '../components/ui/LoadingComponents';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState<RegisterData>({
@@ -29,26 +38,45 @@ const Register: React.FC = () => {
   // Show success message if registration completed
   if (registered) {
     return (
-      <div className=\"min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8\">
-        <div className=\"max-w-md w-full space-y-8\">
-          <div className=\"text-center\">
-            <div className=\"mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-green-100\">
-              <svg className=\"h-6 w-6 text-green-600\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\">
-                <path strokeLinecap=\"round\" strokeLinejoin=\"round\" strokeWidth={2} d=\"M5 13l4 4L19 7\" />
+      <div className="min-h-screen gradient-mesh flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        {/* Background decorations */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-gradient-to-br from-primary-200 to-primary-300 opacity-20 animate-float"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-gradient-to-br from-sky-200 to-sky-300 opacity-20 animate-float" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-gradient-to-br from-success-200 to-success-300 opacity-10 animate-pulse-slow"></div>
+        </div>
+
+        <div className="max-w-md w-full space-y-8 relative z-10">
+          {/* Header */}
+          <div className="text-center animate-fadeInUp">
+            <div className="mx-auto h-16 w-16 flex items-center justify-center rounded-3xl gradient-primary shadow-lg hover-lift mb-6">
+              <svg className="h-10 w-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className=\"mt-6 text-3xl font-extrabold text-gray-900\">Registration Successful!</h2>
-            <p className=\"mt-2 text-sm text-gray-600\">
-              Please check your email for verification instructions.
+            <h2 className="text-4xl font-bold text-gradient-primary mb-3">
+              Registration Successful!
+            </h2>
+            <p className="text-lg text-neutral-600">
+              Welcome to DaorsAgro! Please check your email for verification instructions.
             </p>
-            <div className=\"mt-6\">
-              <Link
-                to=\"/login\"
-                className=\"w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500\"
-              >
-                Go to Login
-              </Link>
-            </div>
+          </div>
+
+          {/* Action Button */}
+          <div className="text-center animate-fadeInUp stagger-4">
+            <Link
+              to="/login"
+              className="btn-primary py-4 px-8 text-lg font-semibold inline-block"
+            >
+              Go to Login
+            </Link>
+          </div>
+
+          {/* Additional Info */}
+          <div className="text-center animate-fadeInUp stagger-5">
+            <p className="text-sm text-neutral-500">
+              This process may take a few minutes. Check your spam folder if needed.
+            </p>
           </div>
         </div>
       </div>
@@ -58,8 +86,8 @@ const Register: React.FC = () => {
   // Show loading if auth state is being determined
   if (isLoading) {
     return (
-      <div className=\"min-h-screen flex items-center justify-center\">
-        <LoadingSpinner size=\"lg\" />
+      <div className="min-h-screen gradient-mesh flex items-center justify-center">
+        <LoadingSpinner size="xl" text="Loading..." />
       </div>
     );
   }
