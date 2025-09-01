@@ -219,7 +219,7 @@ interface AppActions {
   setSidebarOpen: (open: boolean) => void;
   
   // Notification actions
-  addNotification: (notification: Omit<Notification, 'id' | 'timestamp'>) => void;
+  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'> & { read?: boolean }) => void;
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
   removeNotification: (id: string) => void;
@@ -410,16 +410,16 @@ export const useAppStore = create<AppState & AppActions>()(
             }),
           
           // Notification actions
-          addNotification: (notification: Omit<Notification, 'id' | 'timestamp'>) =>
+          addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'> & { read?: boolean }) =>
             set((state) => {
               const newNotification: Notification = {
                 ...notification,
                 id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
                 timestamp: new Date().toISOString(),
-                read: false,
+                read: notification.read ?? false,
               };
               state.notifications.unshift(newNotification);
-              state.unreadNotificationCount += 1;
+              if (!newNotification.read) state.unreadNotificationCount += 1;
             }),
           
           markNotificationAsRead: (id: string) =>

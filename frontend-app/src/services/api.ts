@@ -392,7 +392,10 @@ export const dashboardApi = {
 export const financialApi = {
   getMetrics: (params?: any) => apiClient.getFinancialMetrics(params),
   getSummary: () => apiClient.getFinancialSummary(),
-  getTransactions: (params?: any) => apiClient.getFinancialTransactions(params),
+  getTransactions: async (params?: any) => {
+    const resp = await apiClient.getFinancialTransactions(params);
+    return resp.data as any; // return the paginated payload directly
+  },
   createTransaction: (data: any) => apiClient.createTransaction(data),
   updateTransaction: (id: string, data: any) => apiClient.updateTransaction(id, data),
   deleteTransaction: (id: string) => apiClient.deleteTransaction(id),

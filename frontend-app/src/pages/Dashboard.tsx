@@ -14,7 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 // Enhanced imports
-import { apiClient } from '../services/api';
+import { apiClient, iotApi, financialApi } from '../services/api';
 import { useAppStore, useFarms, useSelectedFarm, useNotifications } from '../store/appStore';
 import { useApiQuery, usePaginatedQuery } from '../hooks/useApiQuery';
 import { formatCurrency, formatNumber, createStaggerDelay } from '../lib/design-system';
@@ -70,14 +70,14 @@ const Dashboard: React.FC = () => {
     pagination: transactionPagination,
   } = usePaginatedQuery({
     baseQueryKey: ['recent-transactions', selectedFarm?.id],
-    queryFn: (page, limit) => apiClient.getFinancialTransactions({ page, limit }),
+  queryFn: (page, limit) => financialApi.getTransactions({ page, limit }),
     pageSize: 10,
     enabled: Boolean(selectedFarm?.id),
   });
 
   const { data: deviceStatus } = useQuery(
     'device-status',
-    () => apiClient.getIoTDevices({ limit: 10 }),
+    () => iotApi.getDevices(),
     { refetchInterval: 15000 }
   );
 
