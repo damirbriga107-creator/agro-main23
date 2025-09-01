@@ -5,7 +5,7 @@ import { ErrorHandlerMiddleware } from '../middleware/error-handler.middleware';
 import { AuthMiddleware } from '../middleware/auth.middleware';
 import { AuthService } from '../services/auth.service';
 import { ServiceDependencies } from './index';
-import { UserRole } from '@daorsagro/types';
+import { UserRole } from '../utils';
 
 /**
  * Setup user management routes

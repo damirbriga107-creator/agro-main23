@@ -5,7 +5,7 @@ import compression from 'compression';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 
-import { ServiceConfigFactory, EnvironmentUtils } from '@daorsagro/config';
+import { ServiceConfigFactory, EnvironmentUtils } from './utils';
 import { Logger } from './utils/logger';
 import { PrismaService } from './services/prisma.service';
 import { RedisService } from './services/redis.service';

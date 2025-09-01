@@ -1,5 +1,4 @@
-import { UserRole } from '@daorsagro/types';
-import { PasswordUtils, TokenUtils, ValidationUtils, EncryptionUtils } from '@daorsagro/utils';
+import { UserRole, PasswordUtils, TokenUtils, ValidationUtils, EncryptionUtils } from '../utils';
 import { PrismaService } from './prisma.service';
 import { RedisService } from './redis.service';
 import { EmailService } from './email.service';
