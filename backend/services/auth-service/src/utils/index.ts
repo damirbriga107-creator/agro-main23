@@ -8,7 +8,8 @@ export enum UserRole {
   FARMER = 'farmer',
   ADVISOR = 'advisor', 
   ADMIN = 'admin',
-  SUPPORT = 'support'
+  SUPPORT = 'support',
+  MANAGER = 'manager'
 }
 
 export interface TokenPayload {
@@ -187,5 +188,23 @@ export class EnvironmentUtils {
     const value = process.env[key];
     if (!value) return defaultValue;
     return value.toLowerCase() === 'true';
+  }
+
+  static getArray(key: string, defaultValue: string[] = []): string[] {
+    const value = process.env[key];
+    if (!value) return defaultValue;
+    return value.split(',').map(item => item.trim());
+  }
+
+  static validateRequired(keys: string[]): void {
+    const missing: string[] = [];
+    for (const key of keys) {
+      if (!process.env[key]) {
+        missing.push(key);
+      }
+    }
+    if (missing.length > 0) {
+      throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    }
   }
 }

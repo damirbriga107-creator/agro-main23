@@ -57,6 +57,23 @@ export class EmailService {
   }
 
   /**
+   * Initialize email service
+   */
+  async initialize(): Promise<void> {
+    try {
+      // Verify SMTP connection if configured
+      if (this.isConfigured) {
+        await this.transporter.verify();
+        this.logger.info('Email service initialized successfully');
+      } else {
+        this.logger.info('Email service started without configuration');
+      }
+    } catch (error) {
+      this.logger.warn('Email service initialization failed, continuing without email functionality', { error });
+    }
+  }
+
+  /**
    * Create nodemailer transporter
    */
   private createTransporter(): void {
