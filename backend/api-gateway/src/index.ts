@@ -213,8 +213,13 @@ class ApiGateway {
     const services = {
       auth: {
         target: EnvironmentUtils.get('AUTH_SERVICE_URL', 'http://localhost:3001'),
-        pathRewrite: { '^/api/v1/auth': '/api/v1/auth', '^/api/v1/users': '/api/v1/users' },
-        paths: ['/api/v1/auth', '/api/v1/users'],
+        pathRewrite: { 
+          '^/api/v1/auth': '/api/v1/auth', 
+          '^/api/v1/users': '/api/v1/users',
+          '^/api/v1/farms': '/api/v1/farms',
+          '^/api/v1/crops': '/api/v1/crops'
+        },
+        paths: ['/api/v1/auth', '/api/v1/users', '/api/v1/farms', '/api/v1/crops'],
         publicPaths: ['/api/v1/auth/login', '/api/v1/auth/register', '/api/v1/auth/forgot-password', '/api/v1/auth/reset-password']
       },
       financial: {

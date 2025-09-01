@@ -224,4 +224,132 @@ export function dashboardRoutes(app: Application, dependencies: any): void {
       }
     })
   );
+
+  /**
+   * GET /api/v1/analytics/dashboard/metrics/:farmId
+   * Get farm-specific dashboard metrics
+   */
+  app.get(
+    '/api/v1/analytics/dashboard/metrics/:farmId',
+    ValidationMiddleware.validateParam('farmId'),
+    ErrorHandlerMiddleware.asyncHandler(async (req: Request, res: Response) => {
+      const startTime = Date.now();
+      
+      try {
+        const { farmId } = req.params;
+        const userId = (req as any).user?.userId;
+        
+        logger.info('Farm dashboard metrics requested', { 
+          farmId,
+          userId
+        });
+
+        // Get farm-specific metrics
+        const farmMetrics = await analyticsService.getFarmDashboardMetrics(farmId, userId);
+
+        const duration = Date.now() - startTime;
+        metricsService.recordAnalyticsQuery('farm_dashboard', duration, true);
+
+        res.json({
+          success: true,
+          data: farmMetrics,
+          requestId: req.headers['x-request-id'],
+          timestamp: new Date().toISOString()
+        });
+
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        metricsService.recordAnalyticsQuery('farm_dashboard', duration, false);
+        throw error;
+      }
+    })
+  );
+
+  /**
+   * GET /api/v1/analytics/farms/:farmId/summary
+   * Get farm analytics summary
+   */
+  app.get(
+    '/api/v1/analytics/farms/:farmId/summary',
+    ValidationMiddleware.validateParam('farmId'),
+    ErrorHandlerMiddleware.asyncHandler(async (req: Request, res: Response) => {
+      const startTime = Date.now();
+      
+      try {
+        const { farmId } = req.params;
+        const { seasonYear } = req.query as any;
+        const userId = (req as any).user?.userId;
+        
+        logger.info('Farm summary requested', { 
+          farmId,
+          seasonYear,
+          userId
+        });
+
+        // Get farm summary data
+        const farmSummary = await analyticsService.getFarmSummary(farmId, userId, {
+          seasonYear: seasonYear ? parseInt(seasonYear) : undefined
+        });
+
+        const duration = Date.now() - startTime;
+        metricsService.recordAnalyticsQuery('farm_summary', duration, true);
+
+        res.json({
+          success: true,
+          data: farmSummary,
+          requestId: req.headers['x-request-id'],
+          timestamp: new Date().toISOString()
+        });
+
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        metricsService.recordAnalyticsQuery('farm_summary', duration, false);
+        throw error;
+      }
+    })
+  );
+
+  /**
+   * GET /api/v1/analytics/crops/summary/:farmId
+   * Get crop analytics summary for a farm
+   */
+  app.get(
+    '/api/v1/analytics/crops/summary/:farmId',
+    ValidationMiddleware.validateParam('farmId'),
+    ErrorHandlerMiddleware.asyncHandler(async (req: Request, res: Response) => {
+      const startTime = Date.now();
+      
+      try {
+        const { farmId } = req.params;
+        const { seasonYear } = req.query as any;
+        const userId = (req as any).user?.userId;
+        
+        logger.info('Crop summary requested', { 
+          farmId,
+          seasonYear,
+          userId
+        });
+
+        // Get crop summary data
+        const cropSummary = await analyticsService.getCropSummary(farmId, userId, {
+          seasonYear: seasonYear ? parseInt(seasonYear) : undefined
+        });
+
+        const duration = Date.now() - startTime;
+        metricsService.recordAnalyticsQuery('crop_summary', duration, true);
+
+        res.json({
+          success: true,
+          data: cropSummary,
+          requestId: req.headers['x-request-id'],
+          timestamp: new Date().toISOString()
+        });
+
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        metricsService.recordAnalyticsQuery('crop_summary', duration, false);
+        throw error;
+      }
+    })
+  );
 }

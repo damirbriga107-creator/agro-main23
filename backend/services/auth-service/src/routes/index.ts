@@ -7,6 +7,8 @@ import { EmailService } from '../services/email.service';
 // Import route modules
 import { setupAuthRoutes } from './auth.routes';
 import { setupUserRoutes } from './user.routes';
+import { setupFarmRoutes } from './farm.routes';
+import { setupCropRoutes } from './crop.routes';
 
 export interface ServiceDependencies {
   prisma: PrismaService;

@@ -280,6 +280,168 @@ export class ValidationMiddleware {
   };
 
   /**
+   * Farm management validation schemas
+   */
+  public static farmSchemas = {
+    // Create farm
+    createFarm: {
+      body: Joi.object({
+        name: Joi.string().min(1).max(200).required().messages({
+          'string.empty': 'Farm name is required',
+          'string.min': 'Farm name must be at least 1 character long',
+          'string.max': 'Farm name must not exceed 200 characters',
+          'any.required': 'Farm name is required'
+        }),
+        description: Joi.string().max(1000).optional().allow(''),
+        totalAcres: Joi.number().positive().precision(2).required().messages({
+          'number.positive': 'Total acres must be a positive number',
+          'any.required': 'Total acres is required'
+        }),
+        farmType: Joi.string().valid('CROP', 'LIVESTOCK', 'MIXED', 'DAIRY', 'POULTRY', 'AQUACULTURE').required().messages({
+          'any.only': 'Farm type must be one of: CROP, LIVESTOCK, MIXED, DAIRY, POULTRY, AQUACULTURE',
+          'any.required': 'Farm type is required'
+        }),
+        address: Joi.string().min(1).max(500).required().messages({
+          'string.empty': 'Address is required',
+          'any.required': 'Address is required'
+        }),
+        city: Joi.string().min(1).max(100).required().messages({
+          'string.empty': 'City is required',
+          'any.required': 'City is required'
+        }),
+        state: Joi.string().min(1).max(100).required().messages({
+          'string.empty': 'State is required',
+          'any.required': 'State is required'
+        }),
+        country: Joi.string().min(1).max(100).required().messages({
+          'string.empty': 'Country is required',
+          'any.required': 'Country is required'
+        }),
+        zipCode: Joi.string().min(1).max(20).required().messages({
+          'string.empty': 'Zip code is required',
+          'any.required': 'Zip code is required'
+        }),
+        latitude: Joi.number().min(-90).max(90).precision(8).required().messages({
+          'number.min': 'Latitude must be between -90 and 90',
+          'number.max': 'Latitude must be between -90 and 90',
+          'any.required': 'Latitude is required'
+        }),
+        longitude: Joi.number().min(-180).max(180).precision(8).required().messages({
+          'number.min': 'Longitude must be between -180 and 180',
+          'number.max': 'Longitude must be between -180 and 180',
+          'any.required': 'Longitude is required'
+        }),
+        certifications: Joi.array().items(Joi.string().max(100)).optional().default([])
+      })
+    },
+
+    // Update farm
+    updateFarm: {
+      body: Joi.object({
+        name: Joi.string().min(1).max(200).optional(),
+        description: Joi.string().max(1000).optional().allow(''),
+        totalAcres: Joi.number().positive().precision(2).optional(),
+        farmType: Joi.string().valid('CROP', 'LIVESTOCK', 'MIXED', 'DAIRY', 'POULTRY', 'AQUACULTURE').optional(),
+        address: Joi.string().min(1).max(500).optional(),
+        city: Joi.string().min(1).max(100).optional(),
+        state: Joi.string().min(1).max(100).optional(),
+        country: Joi.string().min(1).max(100).optional(),
+        zipCode: Joi.string().min(1).max(20).optional(),
+        latitude: Joi.number().min(-90).max(90).precision(8).optional(),
+        longitude: Joi.number().min(-180).max(180).precision(8).optional(),
+        certifications: Joi.array().items(Joi.string().max(100)).optional(),
+        isActive: Joi.boolean().optional()
+      }).min(1).messages({
+        'object.min': 'At least one field must be provided for update'
+      })
+    },
+
+    // Add farm member
+    addMember: {
+      body: Joi.object({
+        email: ValidationMiddleware.schemas.email,
+        role: Joi.string().valid('OWNER', 'MANAGER', 'MEMBER', 'VIEWER').required().messages({
+          'any.only': 'Role must be one of: OWNER, MANAGER, MEMBER, VIEWER',
+          'any.required': 'Role is required'
+        })
+      })
+    },
+
+    // Update farm member
+    updateMember: {
+      body: Joi.object({
+        role: Joi.string().valid('OWNER', 'MANAGER', 'MEMBER', 'VIEWER').required().messages({
+          'any.only': 'Role must be one of: OWNER, MANAGER, MEMBER, VIEWER',
+          'any.required': 'Role is required'
+        })
+      })
+    }
+  };
+
+  /**
+   * Crop management validation schemas
+   */
+  public static cropSchemas = {
+    // Create crop
+    createCrop: {
+      body: Joi.object({
+        name: Joi.string().min(1).max(200).required().messages({
+          'string.empty': 'Crop name is required',
+          'string.min': 'Crop name must be at least 1 character long',
+          'string.max': 'Crop name must not exceed 200 characters',
+          'any.required': 'Crop name is required'
+        }),
+        variety: Joi.string().max(100).optional().allow(''),
+        acres: Joi.number().positive().precision(2).required().messages({
+          'number.positive': 'Acres must be a positive number',
+          'any.required': 'Acres is required'
+        }),
+        plantingDate: Joi.date().optional().allow(null),
+        expectedHarvestDate: Joi.date().optional().allow(null),
+        seasonYear: Joi.number().integer().min(2000).max(3000).required().messages({
+          'number.integer': 'Season year must be an integer',
+          'number.min': 'Season year must be 2000 or later',
+          'number.max': 'Season year must be 3000 or earlier',
+          'any.required': 'Season year is required'
+        }),
+        expectedYield: Joi.number().positive().precision(2).optional().allow(null),
+        yieldUnit: Joi.string().max(50).optional().allow('')
+      })
+    },
+
+    // Update crop
+    updateCrop: {
+      body: Joi.object({
+        name: Joi.string().min(1).max(200).optional(),
+        variety: Joi.string().max(100).optional().allow(''),
+        acres: Joi.number().positive().precision(2).optional(),
+        plantingDate: Joi.date().optional().allow(null),
+        expectedHarvestDate: Joi.date().optional().allow(null),
+        actualHarvestDate: Joi.date().optional().allow(null),
+        status: Joi.string().valid('PLANNED', 'PLANTED', 'GROWING', 'HARVESTED', 'SOLD').optional(),
+        seasonYear: Joi.number().integer().min(2000).max(3000).optional(),
+        expectedYield: Joi.number().positive().precision(2).optional().allow(null),
+        actualYield: Joi.number().positive().precision(2).optional().allow(null),
+        yieldUnit: Joi.string().max(50).optional().allow('')
+      }).min(1).messages({
+        'object.min': 'At least one field must be provided for update'
+      })
+    },
+
+    // Record harvest
+    recordHarvest: {
+      body: Joi.object({
+        actualYield: Joi.number().positive().precision(2).required().messages({
+          'number.positive': 'Actual yield must be a positive number',
+          'any.required': 'Actual yield is required'
+        }),
+        actualHarvestDate: Joi.date().optional().default(() => new Date()),
+        yieldUnit: Joi.string().max(50).optional()
+      })
+    }
+  };
+
+  /**
    * Query parameter validation schemas
    */
   public static querySchemas = {
@@ -413,5 +575,31 @@ export class ValidationMiddleware {
     }
 
     next();
+  };
+
+  /**
+   * Validate UUID parameter
+   */
+  public static validateUUID = (paramName: string) => {
+    return (req: Request, res: Response, next: NextFunction): void => {
+      const paramValue = req.params[paramName];
+      
+      if (!paramValue) {
+        return next(new ValidationError(`Parameter ${paramName} is required`));
+      }
+
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
+      if (!uuidRegex.test(paramValue)) {
+        return next(new ValidationError(`Invalid ${paramName} format. Must be a valid UUID`));
+      }
+
+      ValidationMiddleware.logger.debug(`UUID parameter validated: ${paramName}`, {
+        value: paramValue,
+        requestId: req.headers['x-request-id']
+      });
+
+      next();
+    };
   };
 }
