@@ -2,7 +2,9 @@
   "mcpServers": {
     "database-server": {
       "command": "node",
-      "args": ["mcp-servers/database-server.js"],
+      "args": [
+        "mcp-servers/database-server.js"
+      ],
       "env": {
         "DATABASE_URL": "postgresql://user:pass@localhost:5432/daorsagro",
         "MONGODB_URL": "mongodb://localhost:27017/daorsagro",
@@ -11,7 +13,9 @@
     },
     "api-server": {
       "command": "node",
-      "args": ["mcp-servers/api-server.js"],
+      "args": [
+        "mcp-servers/api-server.js"
+      ],
       "env": {
         "AUTH_SERVICE_URL": "http://localhost:3001",
         "FINANCIAL_SERVICE_URL": "http://localhost:3002",
@@ -23,19 +27,28 @@
         "IOT_SERVICE_URL": "http://localhost:3008",
         "WEATHER_SERVICE_URL": "http://localhost:3009",
         "API_GATEWAY_URL": "http://localhost:3000"
-      }
+      },
+      "alwaysAllow": [
+        "api_gateway_call"
+      ]
     },
     "filesystem-server": {
       "command": "node",
-      "args": ["mcp-servers/filesystem-server.js"]
+      "args": [
+        "mcp-servers/filesystem-server.js"
+      ]
     },
     "code-analysis-server": {
       "command": "node",
-      "args": ["mcp-servers/code-analysis-server.js"]
+      "args": [
+        "mcp-servers/code-analysis-server.js"
+      ]
     },
     "agricultural-server": {
       "command": "node",
-      "args": ["mcp-servers/agricultural-server.js"]
+      "args": [
+        "mcp-servers/agricultural-server.js"
+      ]
     }
   }
 }
