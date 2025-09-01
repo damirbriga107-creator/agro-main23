@@ -68,7 +68,7 @@ class ApiGateway {
 
     // CORS configuration
     this.app.use(cors({
-      origin: EnvironmentUtils.getArray('CORS_ORIGIN', ['http://localhost:5173']),
+      origin: EnvironmentUtils.getArray('CORS_ORIGIN', ['http://localhost:3000']) as string[],
       credentials: EnvironmentUtils.getBoolean('CORS_CREDENTIALS', true),
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-API-Version'],
