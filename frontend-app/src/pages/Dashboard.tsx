@@ -69,7 +69,7 @@ const Dashboard: React.FC = () => {
     goToPage: goToTransactionPage,
     pagination: transactionPagination,
   } = usePaginatedQuery({
-    baseQueryKey: ['recent-transactions', selectedFarm?.id],
+    baseQueryKey: ['recent-transactions', selectedFarm?.id || ''],
   queryFn: (page, limit) => financialApi.getTransactions({ page, limit }),
     pageSize: 10,
     enabled: Boolean(selectedFarm?.id),
@@ -353,29 +353,32 @@ const Dashboard: React.FC = () => {
                     }
                   />
                 ) : (
-                  transactions.slice(0, 5).map((transaction, index) => (
+                  transactions.slice(0, 5).map((t, index) => {
+                    const transaction = t as import('../types/financial').Transaction;
+                    return (
                     <DataTable.Row key={transaction.id || index} data={transaction}>
                       <DataTable.Cell>
-                        {transaction.date ? new Date(transaction.date).toLocaleDateString() : '-'}
+                        {transaction.transactionDate ? new Date(transaction.transactionDate).toLocaleDateString() : '-'}
                       </DataTable.Cell>
                       <DataTable.Cell>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          transaction.type === 'income' 
+                          transaction.transactionType === 'INCOME' 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-red-100 text-red-800'
                         }`}>
-                          {transaction.type === 'income' ? 'Income' : 'Expense'}
+                          {transaction.transactionType === 'INCOME' ? 'Income' : 'Expense'}
                         </span>
                       </DataTable.Cell>
-                      <DataTable.Cell>{transaction.category || 'General'}</DataTable.Cell>
+                      <DataTable.Cell>{transaction.category?.name || 'General'}</DataTable.Cell>
                       <DataTable.Cell align="right">
-                        <span className={transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}>
-                          {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount || 0)}
+                        <span className={transaction.transactionType === 'INCOME' ? 'text-green-600' : 'text-red-600'}>
+                          {transaction.transactionType === 'INCOME' ? '+' : '-'}{formatCurrency(transaction.amount || 0)}
                         </span>
                       </DataTable.Cell>
                       <DataTable.Cell>{transaction.description || 'No description'}</DataTable.Cell>
                     </DataTable.Row>
-                  ))
+                    );
+                  })
                 )}
               </DataTable.Body>
             </DataTable.Root>

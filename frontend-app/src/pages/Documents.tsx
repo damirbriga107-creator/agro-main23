@@ -91,7 +91,7 @@ export const Documents: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<any | null>(null);
   const [showUploader, setShowUploader] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
@@ -410,9 +410,9 @@ export const Documents: React.FC = () => {
               {/* Document List */}
               <DocumentList
                 documents={documents}
-                onView={setSelectedDocument}
-                onDownload={handleDownloadDocument}
-                onDelete={handleDeleteDocument}
+                onView={(d) => setSelectedDocument(d)}
+                onDownload={(d) => void handleDownloadDocument(d)}
+                onDelete={(id) => handleDeleteDocument(id)}
                 viewMode={viewMode}
               />
 
@@ -473,9 +473,9 @@ export const Documents: React.FC = () => {
             <DocumentViewer
               document={selectedDocument}
               onClose={() => setSelectedDocument(null)}
-              onDownload={() => handleDownloadDocument(selectedDocument)}
+              onDownload={() => handleDownloadDocument(selectedDocument!)}
               onDelete={() => {
-                handleDeleteDocument(selectedDocument._id);
+                handleDeleteDocument(selectedDocument!._id);
                 setSelectedDocument(null);
               }}
             />

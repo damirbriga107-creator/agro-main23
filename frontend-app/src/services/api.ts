@@ -392,10 +392,9 @@ export const dashboardApi = {
 export const financialApi = {
   getMetrics: (params?: any) => apiClient.getFinancialMetrics(params),
   getSummary: () => apiClient.getFinancialSummary(),
-  getTransactions: async (params?: any): Promise<import('../types/financial').ApiResponse<any>['data']> => {
+  getTransactions: async (params?: any): Promise<import('../hooks/useApiQuery').PaginatedResponse<import('../types/financial').Transaction>> => {
     const resp = await apiClient.getFinancialTransactions(params);
-    // resp is ApiResponse<any> where data is expected to be a paginated payload
-    return resp.data as any;
+    return resp.data as import('../hooks/useApiQuery').PaginatedResponse<import('../types/financial').Transaction>;
   },
   createTransaction: (data: any) => apiClient.createTransaction(data),
   updateTransaction: (id: string, data: any) => apiClient.updateTransaction(id, data),

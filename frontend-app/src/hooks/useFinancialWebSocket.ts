@@ -182,7 +182,7 @@ export const useFinancialWebSocket = (
 
     socketRef.current = newSocket;
     setSocket(newSocket);
-  }, [farmId, subscriptions, getToken]);
+  }, [farmId, subscriptions]);
 
   /**
    * Disconnect from WebSocket
@@ -258,7 +258,7 @@ export const useFinancialWebSocket = (
       disconnect();
       setTimeout(connect, 1000);
     }
-  }, [user?.userId, connect, disconnect]);
+  }, [user, connect, disconnect]);
 
   return {
     socket,
