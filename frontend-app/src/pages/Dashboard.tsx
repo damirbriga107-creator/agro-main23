@@ -247,17 +247,31 @@ const Dashboard: React.FC = () => {
                  * Map the API Transaction type to the UI shape here to keep typing strict.
                  */}
                 {(() => {
-                  const mapped = (transactions || []).map((t) => ({
-                    id: t.id,
-                    type: t.transactionType === 'INCOME' ? 'income' : 'expense',
-                    amount: t.amount,
-                    description: t.description || '',
+                  type UIRecentTransaction = {
+                    id: string;
+                    type: 'income' | 'expense';
+                    amount: number;
+                    description: string;
+                    status: 'completed' | 'pending' | 'failed';
+                    createdAt?: string;
+                    date?: string;
+                    category?: string;
+                    farmName?: string;
+                    paymentMethod?: string;
+                    currency?: string;
+                  };
+
+                  const mapped: UIRecentTransaction[] = (transactions || []).map((t) => ({
+                    id: (t as any).id,
+                    type: (t as any).transactionType === 'INCOME' ? 'income' : 'expense',
+                    amount: (t as any).amount || 0,
+                    description: (t as any).description || '',
                     status: 'completed',
-                    createdAt: t.createdAt,
-                    date: t.transactionDate,
-                    category: t.category?.name,
-                    farmName: t.farm?.name,
-                    paymentMethod: t.paymentMethod,
+                    createdAt: (t as any).createdAt,
+                    date: (t as any).transactionDate,
+                    category: (t as any).category?.name,
+                    farmName: (t as any).farm?.name,
+                    paymentMethod: (t as any).paymentMethod,
                     currency: 'USD',
                   }));
 

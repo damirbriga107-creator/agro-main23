@@ -381,7 +381,7 @@ export const useAppStore = create<AppState & AppActions>()(
           
           addRevenue: (farmId: string, cropId: string, revenue: Revenue) =>
             set((state) => {
-              const farm = state.farms.find((f) => f.id === farmId);
+              const farm = state.farms.find((f: Farm) => f.id === farmId);
               const crop = farm?.crops.find((c: Crop) => c.id === cropId);
               if (crop) {
                 crop.financials.revenues.push(revenue);
@@ -396,8 +396,8 @@ export const useAppStore = create<AppState & AppActions>()(
           
           updateBudget: (farmId: string, cropId: string, budget: Partial<Budget>) =>
             set((state) => {
-              const farm = state.farms.find((f) => f.id === farmId);
-              const crop = farm?.crops.find((c) => c.id === cropId);
+              const farm = state.farms.find((f: Farm) => f.id === farmId);
+              const crop = farm?.crops.find((c: Crop) => c.id === cropId);
               if (crop) {
                 crop.financials.budget = { ...crop.financials.budget, ...budget };
               }
@@ -414,7 +414,7 @@ export const useAppStore = create<AppState & AppActions>()(
             set((state) => {
               const newNotification: Notification = {
                 ...notification,
-                id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
                 timestamp: new Date().toISOString(),
                 read: notification.read ?? false,
               };

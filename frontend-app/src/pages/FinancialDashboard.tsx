@@ -323,7 +323,7 @@ const FinancialDashboard: React.FC = () => {
                 className="text-sm border border-gray-300 rounded-md px-3 py-1"
               />
             </div>
-            <FinancialNotifications farmId={user?.farmIds?.[0]} />
+            <FinancialNotifications farmId={(user as any)?.farmId || (user as any)?.id || ''} />
             <button 
               onClick={() => {
                 setTransactionFormType('EXPENSE');
@@ -529,7 +529,7 @@ const FinancialDashboard: React.FC = () => {
         onClose={() => setShowTransactionForm(false)}
         initialData={{
           transactionType: transactionFormType,
-          farmId: user?.farmIds?.[0] || ''
+          farmId: (user as any)?.farmId || (user as any)?.id || ''
         }}
         onSuccess={() => {
           // Queries will be invalidated by the TransactionForm component
