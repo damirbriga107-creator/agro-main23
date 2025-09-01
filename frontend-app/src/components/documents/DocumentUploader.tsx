@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Upload, X, FileText, AlertCircle, CheckCircle, Trash2, Tag, FileIcon } from 'lucide-react';
 import api from '../../services/api';
+import { AxiosProgressEvent } from 'axios';
 
 interface DocumentUploaderProps {
   onSuccess: (documents: any[]) => void;
@@ -161,8 +162,10 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
             headers: {
               'Content-Type': 'multipart/form-data',
             },
-            onUploadProgress: (progressEvent: any) => {
-              const progress = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
+            onUploadProgress: (progressEvent: AxiosProgressEvent) => {
+              const loaded = (progressEvent.loaded as number) || 0;
+              const total = (progressEvent.total as number) || 1;
+              const progress = Math.round((loaded * 100) / total);
               updateFileMetadata(fileData.id, { uploadProgress: progress });
             }
           });
