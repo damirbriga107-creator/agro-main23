@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Upload, X, FileText, AlertCircle, CheckCircle, Trash2, Tag, FileIcon } from 'lucide-react';
-import { api } from '../../services/api';
+import api from '../../services/api';
 
 interface DocumentUploaderProps {
   onSuccess: (documents: any[]) => void;
@@ -161,7 +161,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
             headers: {
               'Content-Type': 'multipart/form-data',
             },
-            onUploadProgress: (progressEvent) => {
+            onUploadProgress: (progressEvent: any) => {
               const progress = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1));
               updateFileMetadata(fileData.id, { uploadProgress: progress });
             }
@@ -171,7 +171,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
             uploadStatus: 'success', 
             uploadProgress: 100 
           });
-          results.push(response.data.data);
+          results.push((response.data as any).data);
         } catch (error: any) {
           const errorMessage = error.response?.data?.message || 'Upload failed';
           updateFileMetadata(fileData.id, { 

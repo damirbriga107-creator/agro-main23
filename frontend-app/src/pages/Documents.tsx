@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Upload, Filter, FileText, Download, Trash2, Eye, Tag, Calendar, User, FolderOpen, AlertCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
-import { LoadingSpinner } from '../components/common/LoadingSpinner';
-import { ErrorMessage } from '../components/common/ErrorMessage';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import ErrorMessage from '../components/common/ErrorMessage';
 import { DocumentUploader } from '../components/documents/DocumentUploader';
 import { DocumentList } from '../components/documents/DocumentList';
 import { DocumentFilters } from '../components/documents/DocumentFilters';
@@ -484,3 +484,5 @@ export const Documents: React.FC = () => {
     </div>
   );
 };
+
+export default Documents;
