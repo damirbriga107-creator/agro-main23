@@ -13,6 +13,9 @@ interface Document {
   category: string;
   tags: string[];
   description?: string;
+  storageProvider?: string;
+  storagePath?: string;
+  storageUrl?: string;
   processingStatus: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
   ocrStatus: 'not_required' | 'pending' | 'processing' | 'completed' | 'failed';
   extractedText?: string;
@@ -21,6 +24,7 @@ interface Document {
   uploadedAt: string;
   uploadedBy: string;
   version: number;
+  lastModifiedAt?: string;
 }
 
 interface DocumentViewerProps {

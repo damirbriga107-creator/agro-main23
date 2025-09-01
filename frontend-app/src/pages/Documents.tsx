@@ -184,12 +184,12 @@ export const Documents: React.FC = () => {
 
   const handleDownloadDocument = async (doc: Document) => {
     try {
-      const response = await api.get(`/documents/${document._id}/download`, {
+  const response = await api.get(`/documents/${doc._id}/download`, {
         responseType: 'blob'
-      });
+      }) as any;
       
       // Create download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = window.URL.createObjectURL(new Blob([response.data as BlobPart]));
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', doc.fileName);
@@ -352,7 +352,7 @@ export const Documents: React.FC = () => {
         {/* Error Message */}
         {error && (
           <div className="mb-6">
-            <ErrorMessage message={error} onClose={() => setError(null)} />
+            <ErrorMessage title="Error" message={error} onClose={() => setError(null)} />
           </div>
         )}
 
@@ -470,15 +470,15 @@ export const Documents: React.FC = () => {
 
         {/* Document Viewer Modal */}
         {selectedDocument && (
-          <DocumentViewer
-            document={selectedDocument}
-            onClose={() => setSelectedDocument(null)}
-            onDownload={() => handleDownloadDocument(selectedDocument)}
-            onDelete={() => {
-              handleDeleteDocument(selectedDocument._id);
-              setSelectedDocument(null);
-            }}
-          />
+            <DocumentViewer
+              document={selectedDocument}
+              onClose={() => setSelectedDocument(null)}
+              onDownload={() => handleDownloadDocument(selectedDocument)}
+              onDelete={() => {
+                handleDeleteDocument(selectedDocument._id);
+                setSelectedDocument(null);
+              }}
+            />
         )}
       </div>
     </div>

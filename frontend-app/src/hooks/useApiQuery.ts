@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from 'react-query';
 import { useState, useCallback } from 'react';
 import { useAppStore } from '../store/appStore';
-import type { AppState } from '../store/appStore';
 import toast from 'react-hot-toast';
 
 // Types

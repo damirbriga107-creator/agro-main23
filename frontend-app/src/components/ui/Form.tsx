@@ -185,7 +185,7 @@ const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
 FormTextarea.displayName = 'FormTextarea';
 
 // Form Select
-interface FormSelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+interface FormSelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size'> {
   size?: keyof typeof componentVariants.input.sizes;
   variant?: keyof typeof componentVariants.input.variants;
   placeholder?: string;

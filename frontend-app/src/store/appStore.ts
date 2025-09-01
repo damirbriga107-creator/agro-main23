@@ -348,7 +348,7 @@ export const useAppStore = create<AppState & AppActions>()(
             set((state) => {
               const farm = state.farms.find((f: Farm) => f.id === farmId);
               if (farm) {
-                const cropIndex = farm.crops.findIndex((c) => c.id === cropId);
+                const cropIndex = farm.crops.findIndex((c: Crop) => c.id === cropId);
                 if (cropIndex !== -1) {
                   farm.crops[cropIndex] = { ...farm.crops[cropIndex], ...updates };
                 }
@@ -359,7 +359,7 @@ export const useAppStore = create<AppState & AppActions>()(
             set((state) => {
               const farm = state.farms.find((f: Farm) => f.id === farmId);
               if (farm) {
-                farm.crops = farm.crops.filter((c) => c.id !== cropId);
+                farm.crops = farm.crops.filter((c: Crop) => c.id !== cropId);
               }
             }),
           
@@ -367,12 +367,12 @@ export const useAppStore = create<AppState & AppActions>()(
           addExpense: (farmId: string, cropId: string, expense: Expense) =>
             set((state) => {
               const farm = state.farms.find((f: Farm) => f.id === farmId);
-              const crop = farm?.crops.find((c) => c.id === cropId);
+              const crop = farm?.crops.find((c: Crop) => c.id === cropId);
               if (crop) {
                 crop.financials.expenses.push(expense);
                 // Recalculate profitability metrics
-                const totalExpenses = crop.financials.expenses.reduce((sum, e) => sum + e.amount, 0);
-                const totalRevenue = crop.financials.revenues.reduce((sum, r) => sum + r.amount, 0);
+                const totalExpenses = crop.financials.expenses.reduce((sum: number, e: Expense) => sum + e.amount, 0);
+                const totalRevenue = crop.financials.revenues.reduce((sum: number, r: Revenue) => sum + r.amount, 0);
                 crop.financials.profitability.totalExpenses = totalExpenses;
                 crop.financials.profitability.netProfit = totalRevenue - totalExpenses;
                 crop.financials.profitability.profitMargin = totalRevenue > 0 ? (crop.financials.profitability.netProfit / totalRevenue) * 100 : 0;
@@ -382,12 +382,12 @@ export const useAppStore = create<AppState & AppActions>()(
           addRevenue: (farmId: string, cropId: string, revenue: Revenue) =>
             set((state) => {
               const farm = state.farms.find((f) => f.id === farmId);
-              const crop = farm?.crops.find((c) => c.id === cropId);
+              const crop = farm?.crops.find((c: Crop) => c.id === cropId);
               if (crop) {
                 crop.financials.revenues.push(revenue);
                 // Recalculate profitability metrics
-                const totalRevenue = crop.financials.revenues.reduce((sum, r) => sum + r.amount, 0);
-                const totalExpenses = crop.financials.expenses.reduce((sum, e) => sum + e.amount, 0);
+                const totalRevenue = crop.financials.revenues.reduce((sum: number, r: Revenue) => sum + r.amount, 0);
+                const totalExpenses = crop.financials.expenses.reduce((sum: number, e: Expense) => sum + e.amount, 0);
                 crop.financials.profitability.totalRevenue = totalRevenue;
                 crop.financials.profitability.netProfit = totalRevenue - totalExpenses;
                 crop.financials.profitability.profitMargin = totalRevenue > 0 ? (crop.financials.profitability.netProfit / totalRevenue) * 100 : 0;
@@ -520,8 +520,8 @@ export const useAppStore = create<AppState & AppActions>()(
           getOverallProfitability: () => {
             const state = get();
             const totals = state.farms.reduce(
-              (acc, farm) => {
-                farm.crops.forEach((crop) => {
+              (acc, farm: Farm) => {
+                farm.crops.forEach((crop: Crop) => {
                   acc.totalRevenue += crop.financials.profitability.totalRevenue;
                   acc.totalExpenses += crop.financials.profitability.totalExpenses;
                 });
