@@ -409,10 +409,10 @@ export const Documents: React.FC = () => {
 
               {/* Document List */}
               <DocumentList
-                documents={documents}
-                onView={(d) => setSelectedDocument(d)}
-                onDownload={(d) => void handleDownloadDocument(d)}
-                onDelete={(id) => handleDeleteDocument(id)}
+                documents={documents as any}
+                onView={(d: any) => setSelectedDocument(d)}
+                onDownload={(d: any) => void handleDownloadDocument(d)}
+                onDelete={(id: any) => handleDeleteDocument(id)}
                 viewMode={viewMode}
               />
 

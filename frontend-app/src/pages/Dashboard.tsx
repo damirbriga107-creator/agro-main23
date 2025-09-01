@@ -228,7 +228,7 @@ const Dashboard: React.FC = () => {
 
       {/* Key Metrics with staggered animations */}
       <div className="animate-fadeInUp stagger-2">
-        <DashboardMetrics data={dashboardData} />
+        <DashboardMetrics data={dashboardData?.data} />
       </div>
 
       {/* Main Content Grid with enhanced layout */}
@@ -242,7 +242,7 @@ const Dashboard: React.FC = () => {
           
           {/* Recent Transactions */}
           <div className="animate-fadeInUp stagger-4">
-            <RecentTransactions transactions={recentTransactions?.data || []} />
+            <RecentTransactions transactions={transactions || []} />
           </div>
           
           {/* Device Status */}
