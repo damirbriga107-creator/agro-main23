@@ -1,0 +1,505 @@
+version: '3.8'
+
+networks:
+  agro-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+  elasticsearch_data:
+  prometheus_data:
+  grafana_data:
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
+  jwt_refresh_secret:
+    file: ./secrets/jwt_refresh_secret.txt
+  redis_password:
+    file: ./secrets/redis_password.txt
+  mongodb_root_password:
+    file: ./secrets/mongodb_root_password.txt
+
+services:
+  # Database Services
+  postgresql:
+    image: postgres:15-alpine
+    container_name: agro-postgresql
+    environment:
+      POSTGRES_DB: agro_production
+      POSTGRES_USER: agro_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-postgres.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      agro-network:
+        ipv4_address: 172.20.0.10
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agro_user -d agro_production"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  mongodb:
+    image: mongo:7
+    container_name: agro-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongodb_root_password
+      MONGO_INITDB_DATABASE: agro_production
+    secrets:
+      - mongodb_root_password
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/init-mongodb.js:/docker-entrypoint-initdb.d/init.js:ro
+    ports:
+      - "27017:27017"
+    networks:
+      agro-network:
+        ipv4_address: 172.20.0.11
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/agro_production --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  redis:
+    image: redis:7-alpine
+    container_name: agro-redis
+    command: redis-server --requirepass "$(cat /run/secrets/redis_password)" --maxmemory 256mb --maxmemory-policy allkeys-lru
+    secrets:
+      - redis_password
+    volumes:
+      - redis_data:/data
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    ports:
+      - "6379:6379"
+    networks:
+      agro-network:
+        ipv4_address: 172.20.0.12
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "$(cat /run/secrets/redis_password)", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: agro-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=true
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      agro-network:
+        ipv4_address: 172.20.0.13
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -vq '\"status\":\"red\"'"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    restart: unless-stopped
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+  # Backend Services
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+      target: production
+    container_name: agro-api-gateway
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      
+      # Database Configuration
+      POSTGRES_URL: postgresql://agro_user@postgresql:5432/agro_production
+      MONGODB_URL: mongodb://admin@mongodb:27017/agro_production?authSource=admin
+      REDIS_URL: redis://redis:6379
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      
+      # File-based secrets
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      MONGODB_PASSWORD_FILE: /run/secrets/mongodb_root_password
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      JWT_REFRESH_SECRET_FILE: /run/secrets/jwt_refresh_secret
+      
+      # Gateway Configuration
+      GW_CACHE_TTL: 30
+      CORS_ORIGINS: '["http://localhost:3000", "https://app.daorsagro.com"]'
+      
+      # Service Discovery
+      AUTH_SERVICE_URL: http://auth-service:3001
+      FINANCIAL_SERVICE_URL: http://financial-service:3002
+      SUBSIDY_SERVICE_URL: http://subsidy-service:3003
+      INSURANCE_SERVICE_URL: http://insurance-service:3004
+      ANALYTICS_SERVICE_URL: http://analytics-service:3005
+      DOCUMENT_SERVICE_URL: http://document-service:3006
+      NOTIFICATION_SERVICE_URL: http://notification-service:3007
+      IOT_SERVICE_URL: http://iot-service:3008
+      
+      # Pool Configuration
+      PG_POOL_MAX: 20
+      PG_POOL_IDLE: 30000
+      PG_CONN_TIMEOUT: 2000
+      MONGO_MAX_POOL: 50
+      MONGO_MIN_POOL: 5
+      
+      # Health Check Configuration
+      HEALTH_CHECK_INTERVAL: 30000
+      
+    secrets:
+      - db_password
+      - mongodb_root_password
+      - redis_password
+      - jwt_secret
+      - jwt_refresh_secret
+    ports:
+      - "3000:3000"
+    networks:
+      agro-network:
+        ipv4_address: 172.20.0.20
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      replicas: 2
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  auth-service:
+    build:
+      context: ./backend/services/auth-service
+      dockerfile: Dockerfile
+      target: production
+    container_name: agro-auth-service
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      POSTGRES_URL: postgresql://agro_user@postgresql:5432/agro_production
+      REDIS_URL: redis://redis:6379
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      JWT_REFRESH_SECRET_FILE: /run/secrets/jwt_refresh_secret
+      JWT_ACCESS_EXPIRY: 15m
+      JWT_REFRESH_EXPIRY: 7d
+    secrets:
+      - db_password
+      - redis_password
+      - jwt_secret
+      - jwt_refresh_secret
+    ports:
+      - "3001:3001"
+    networks:
+      agro-network:
+        ipv4_address: 172.20.0.21
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    restart: unless-stopped
+
+  financial-service:
+    build:
+      context: ./backend/services/financial-service
+      dockerfile: Dockerfile
+      target: production
+    container_name: agro-financial-service
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      POSTGRES_URL: postgresql://agro_user@postgresql:5432/agro_production
+      MONGODB_URL: mongodb://admin@mongodb:27017/agro_production?authSource=admin
+      REDIS_URL: redis://redis:6379
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      MONGODB_PASSWORD_FILE: /run/secrets/mongodb_root_password
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+    secrets:
+      - db_password
+      - mongodb_root_password
+      - redis_password
+      - jwt_secret
+    ports:
+      - "3002:3002"
+    networks:
+      agro-network:
+        ipv4_address: 172.20.0.22
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    restart: unless-stopped
+
+  analytics-service:
+    build:
+      context: ./backend/services/analytics-service
+      dockerfile: Dockerfile
+      target: production
+    container_name: agro-analytics-service
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+      MONGODB_URL: mongodb://admin@mongodb:27017/agro_production?authSource=admin
+      REDIS_URL: redis://redis:6379
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      MONGODB_PASSWORD_FILE: /run/secrets/mongodb_root_password
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+    secrets:
+      - mongodb_root_password
+      - redis_password
+      - jwt_secret
+    ports:
+      - "3005:3005"
+    networks:
+      agro-network:
+        ipv4_address: 172.20.0.25
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    restart: unless-stopped
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend-app
+      dockerfile: Dockerfile
+      target: production
+    container_name: agro-frontend
+    environment:
+      NODE_ENV: production
+      VITE_API_URL: http://localhost:3000
+      VITE_API_TIMEOUT: 30000
+      VITE_WEBSOCKET_URL: ws://localhost:3000
+      VITE_ENABLE_ANALYTICS: true
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      agro-network:
+        ipv4_address: 172.20.0.30
+    depends_on:
+      - api-gateway
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    restart: unless-stopped
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+
+  # Monitoring Services
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: agro-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/rules.yml:/etc/prometheus/rules.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      agro-network:
+        ipv4_address: 172.20.0.40
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: agro-grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+    networks:
+      agro-network:
+        ipv4_address: 172.20.0.41
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # Load Balancer (optional for production)
+  nginx-lb:
+    image: nginx:alpine
+    container_name: agro-nginx-lb
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/load-balancer.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      agro-network:
+        ipv4_address: 172.20.0.50
+    depends_on:
+      - api-gateway
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
