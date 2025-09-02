@@ -1,0 +1,469 @@
+# DaorsAgro Backup and Disaster Recovery Strategy
+# This configuration defines automated backup procedures and disaster recovery plans
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-config
+  namespace: daorsagro
+data:
+  # Backup schedule configuration
+  backup-schedule.yaml: |
+    # Daily backups at 2 AM UTC
+    daily_backup_time: "0 2 * * *"
+    
+    # Weekly full backups on Sunday at 1 AM UTC
+    weekly_backup_time: "0 1 * * 0"
+    
+    # Monthly archive backups on 1st day at midnight UTC
+    monthly_backup_time: "0 0 1 * *"
+    
+    # Retention policies
+    retention:
+      daily: 7    # Keep daily backups for 7 days
+      weekly: 4   # Keep weekly backups for 4 weeks
+      monthly: 12 # Keep monthly backups for 12 months
+      yearly: 5   # Keep yearly backups for 5 years
+
+  # Database backup configuration
+  database-backup.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    
+    # Configuration
+    BACKUP_DIR="/backups"
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    S3_BUCKET="daorsagro-backups"
+    
+    # PostgreSQL backup
+    echo "Starting PostgreSQL backup..."
+    PGPASSWORD=$POSTGRES_PASSWORD pg_dump \
+      -h $POSTGRES_HOST \
+      -U $POSTGRES_USER \
+      -d $POSTGRES_DB \
+      --verbose \
+      --format=custom \
+      --compress=9 \
+      --file="$BACKUP_DIR/postgres_${TIMESTAMP}.dump"
+    
+    # MongoDB backup
+    echo "Starting MongoDB backup..."
+    mongodump \
+      --host $MONGODB_HOST \
+      --username $MONGODB_USER \
+      --password $MONGODB_PASSWORD \
+      --authenticationDatabase admin \
+      --db $MONGODB_DB \
+      --gzip \
+      --out "$BACKUP_DIR/mongodb_${TIMESTAMP}"
+    
+    # Redis backup
+    echo "Starting Redis backup..."
+    redis-cli \
+      -h $REDIS_HOST \
+      -a $REDIS_PASSWORD \
+      --rdb "$BACKUP_DIR/redis_${TIMESTAMP}.rdb"
+    
+    # ClickHouse backup
+    echo "Starting ClickHouse backup..."
+    clickhouse-client \
+      --host $CLICKHOUSE_HOST \
+      --user $CLICKHOUSE_USER \
+      --password $CLICKHOUSE_PASSWORD \
+      --query "BACKUP DATABASE $CLICKHOUSE_DB TO S3('s3://$S3_BUCKET/clickhouse_${TIMESTAMP}', '$AWS_ACCESS_KEY_ID', '$AWS_SECRET_ACCESS_KEY')"
+    
+    # Elasticsearch backup
+    echo "Starting Elasticsearch backup..."
+    curl -X PUT "$ELASTICSEARCH_URL/_snapshot/s3_repository/snapshot_${TIMESTAMP}?wait_for_completion=true" \
+      -H 'Content-Type: application/json' \
+      -d '{
+        "indices": "*",
+        "ignore_unavailable": true,
+        "include_global_state": false
+      }'
+    
+    # Upload to S3
+    echo "Uploading backups to S3..."
+    aws s3 sync "$BACKUP_DIR" "s3://$S3_BUCKET/$(date +%Y/%m/%d)/" \
+      --storage-class STANDARD_IA \
+      --server-side-encryption AES256
+    
+    # Cleanup local backups older than 2 days
+    find "$BACKUP_DIR" -type f -mtime +2 -delete
+    
+    echo "Backup completed successfully!"
+
+  # Application data backup
+  app-backup.sh: |
+    #!/bin/bash
+    set -euo pipefail
+    
+    BACKUP_DIR="/app-backups"
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    S3_BUCKET="daorsagro-app-backups"
+    
+    # Backup uploaded documents
+    echo "Backing up document storage..."
+    aws s3 sync "s3://daorsagro-documents" "$BACKUP_DIR/documents_${TIMESTAMP}/" \
+      --storage-class GLACIER
+    
+    # Backup configuration files
+    echo "Backing up configurations..."
+    kubectl get configmaps -n daorsagro -o yaml > "$BACKUP_DIR/configmaps_${TIMESTAMP}.yaml"
+    kubectl get secrets -n daorsagro -o yaml > "$BACKUP_DIR/secrets_${TIMESTAMP}.yaml"
+    
+    # Backup persistent volumes
+    echo "Creating volume snapshots..."
+    kubectl get pv -o json | jq -r '.items[] | select(.spec.claimRef.namespace=="daorsagro") | .metadata.name' | \
+    while read pv; do
+      kubectl patch pv "$pv" -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
+      # Create EBS snapshot (AWS specific)
+      VOLUME_ID=$(kubectl get pv "$pv" -o jsonpath='{.spec.awsElasticBlockStore.volumeID}' | cut -d'/' -f4)
+      aws ec2 create-snapshot \
+        --volume-id "$VOLUME_ID" \
+        --description "DaorsAgro backup ${TIMESTAMP} - ${pv}" \
+        --tag-specifications "ResourceType=snapshot,Tags=[{Key=Name,Value=daorsagro-${pv}-${TIMESTAMP}},{Key=Environment,Value=production},{Key=BackupType,Value=automated}]"
+    done
+    
+    echo "Application backup completed!"
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: database-backup
+  namespace: daorsagro
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: backup
+            image: postgres:15-alpine
+            command: ["/bin/bash"]
+            args: ["/scripts/database-backup.sh"]
+            env:
+            - name: POSTGRES_HOST
+              value: "postgres-service"
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: database-secrets
+                  key: postgres-password
+            - name: POSTGRES_DB
+              value: "daorsagro"
+            - name: MONGODB_HOST
+              value: "mongodb-service"
+            - name: MONGODB_USER
+              value: "mongo"
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: database-secrets
+                  key: mongo-password
+            - name: MONGODB_DB
+              value: "daorsagro"
+            - name: REDIS_HOST
+              value: "redis-service"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: database-secrets
+                  key: redis-password
+            - name: CLICKHOUSE_HOST
+              value: "clickhouse-service"
+            - name: CLICKHOUSE_USER
+              value: "clickhouse"
+            - name: CLICKHOUSE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: database-secrets
+                  key: clickhouse-password
+            - name: CLICKHOUSE_DB
+              value: "daorsagro"
+            - name: ELASTICSEARCH_URL
+              value: "http://elasticsearch-service:9200"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: storage-secrets
+                  key: aws-access-key-id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: storage-secrets
+                  key: aws-secret-access-key
+            volumeMounts:
+            - name: backup-scripts
+              mountPath: /scripts
+            - name: backup-storage
+              mountPath: /backups
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "250m"
+              limits:
+                memory: "2Gi"
+                cpu: "1000m"
+          volumes:
+          - name: backup-scripts
+            configMap:
+              name: backup-config
+              defaultMode: 0755
+          - name: backup-storage
+            emptyDir:
+              sizeLimit: 10Gi
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: application-backup
+  namespace: daorsagro
+spec:
+  schedule: "0 3 * * *"  # Daily at 3 AM UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: backup-service-account
+          restartPolicy: OnFailure
+          containers:
+          - name: app-backup
+            image: amazon/aws-cli:latest
+            command: ["/bin/bash"]
+            args: ["/scripts/app-backup.sh"]
+            env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: storage-secrets
+                  key: aws-access-key-id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: storage-secrets
+                  key: aws-secret-access-key
+            - name: AWS_DEFAULT_REGION
+              value: "us-east-1"
+            volumeMounts:
+            - name: backup-scripts
+              mountPath: /scripts
+            - name: app-backup-storage
+              mountPath: /app-backups
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "100m"
+              limits:
+                memory: "1Gi"
+                cpu: "500m"
+          volumes:
+          - name: backup-scripts
+            configMap:
+              name: backup-config
+              defaultMode: 0755
+          - name: app-backup-storage
+            emptyDir:
+              sizeLimit: 5Gi
+
+---
+# Service Account for backup operations
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backup-service-account
+  namespace: daorsagro
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: backup-role
+rules:
+- apiGroups: [""]
+  resources: ["persistentvolumes", "persistentvolumeclaims", "configmaps", "secrets"]
+  verbs: ["get", "list", "patch"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "statefulsets"]
+  verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: backup-role-binding
+subjects:
+- kind: ServiceAccount
+  name: backup-service-account
+  namespace: daorsagro
+roleRef:
+  kind: ClusterRole
+  name: backup-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Disaster Recovery Plan ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: disaster-recovery-plan
+  namespace: daorsagro
+data:
+  recovery-procedures.md: |
+    # DaorsAgro Disaster Recovery Procedures
+    
+    ## Recovery Time Objectives (RTO) and Recovery Point Objectives (RPO)
+    
+    | Component | RTO | RPO | Priority |
+    |-----------|-----|-----|----------|
+    | API Gateway | 15 minutes | 5 minutes | Critical |
+    | Auth Service | 15 minutes | 5 minutes | Critical |
+    | Financial Service | 30 minutes | 15 minutes | High |
+    | Database (PostgreSQL) | 1 hour | 15 minutes | Critical |
+    | Document Storage | 2 hours | 1 hour | Medium |
+    | Analytics | 4 hours | 4 hours | Low |
+    
+    ## Recovery Procedures
+    
+    ### 1. Database Recovery
+    
+    #### PostgreSQL Recovery
+    ```bash
+    # Restore from latest backup
+    LATEST_BACKUP=$(aws s3 ls s3://daorsagro-backups/ --recursive | grep postgres | sort | tail -n 1 | awk '{print $4}')
+    aws s3 cp "s3://daorsagro-backups/$LATEST_BACKUP" ./postgres_backup.dump
+    
+    # Restore database
+    pg_restore -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB --clean --if-exists ./postgres_backup.dump
+    ```
+    
+    #### MongoDB Recovery
+    ```bash
+    # Download and restore MongoDB backup
+    LATEST_BACKUP=$(aws s3 ls s3://daorsagro-backups/ --recursive | grep mongodb | sort | tail -n 1 | awk '{print $4}')
+    aws s3 cp "s3://daorsagro-backups/$LATEST_BACKUP" ./mongodb_backup.tar.gz
+    tar -xzf mongodb_backup.tar.gz
+    
+    mongorestore --host $MONGODB_HOST --username $MONGODB_USER --password $MONGODB_PASSWORD --authenticationDatabase admin --drop ./mongodb_backup/
+    ```
+    
+    ### 2. Application Recovery
+    
+    #### Kubernetes Cluster Recovery
+    ```bash
+    # Recreate namespace and basic resources
+    kubectl apply -f infrastructure/kubernetes/namespace.yaml
+    kubectl apply -f infrastructure/kubernetes/configmap.yaml
+    kubectl apply -f infrastructure/kubernetes/secrets.yaml
+    
+    # Deploy core services in order
+    kubectl apply -f infrastructure/kubernetes/database-deployments.yaml
+    kubectl apply -f infrastructure/kubernetes/api-gateway-deployment.yaml
+    kubectl apply -f infrastructure/kubernetes/service-deployments.yaml
+    
+    # Wait for services to be ready
+    kubectl wait --for=condition=ready pod -l app=api-gateway -n daorsagro --timeout=300s
+    ```
+    
+    ### 3. Data Recovery
+    
+    #### Document Storage Recovery
+    ```bash
+    # Restore documents from S3 backup
+    aws s3 sync s3://daorsagro-app-backups/documents/ s3://daorsagro-documents/ --delete
+    ```
+    
+    #### Configuration Recovery
+    ```bash
+    # Restore configurations
+    kubectl apply -f /path/to/configmaps_backup.yaml
+    kubectl apply -f /path/to/secrets_backup.yaml
+    ```
+    
+    ### 4. Verification Steps
+    
+    1. **Health Checks**: Verify all services are responding
+    2. **Database Connectivity**: Test database connections
+    3. **API Functionality**: Run smoke tests on critical endpoints
+    4. **User Authentication**: Verify login functionality
+    5. **Data Integrity**: Spot check critical data
+    6. **External Integrations**: Test third-party API connections
+    
+    ### 5. Communication Plan
+    
+    1. **Internal Team**: Notify via Slack #incidents channel
+    2. **Stakeholders**: Email to stakeholders@daorsagro.com
+    3. **Users**: Status page update at status.daorsagro.com
+    4. **Post-Incident**: Schedule post-mortem meeting within 24 hours
+    
+    ## Emergency Contacts
+    
+    - **DevOps Lead**: +1-555-0101
+    - **CTO**: +1-555-0102
+    - **AWS Support**: Enterprise Support Case
+    - **Database Admin**: +1-555-0103
+    
+    ## Testing Schedule
+    
+    - **Monthly**: Backup restoration test
+    - **Quarterly**: Full disaster recovery drill
+    - **Annually**: Complete infrastructure rebuild test
+
+  monitoring-recovery.sh: |
+    #!/bin/bash
+    # Recovery monitoring script
+    
+    set -euo pipefail
+    
+    echo "Starting recovery monitoring..."
+    
+    # Check API Gateway health
+    for i in {1..30}; do
+      if curl -f http://api-gateway-service:3000/health > /dev/null 2>&1; then
+        echo "API Gateway is healthy"
+        break
+      fi
+      echo "Waiting for API Gateway... ($i/30)"
+      sleep 10
+    done
+    
+    # Check database connectivity
+    if pg_isready -h postgres-service -p 5432; then
+      echo "PostgreSQL is ready"
+    else
+      echo "PostgreSQL is not ready"
+      exit 1
+    fi
+    
+    # Check Redis connectivity
+    if redis-cli -h redis-service ping | grep -q PONG; then
+      echo "Redis is ready"
+    else
+      echo "Redis is not ready"
+      exit 1
+    fi
+    
+    # Check all microservices
+    services=("auth" "financial" "subsidy" "insurance" "analytics" "document" "notification" "iot")
+    for service in "${services[@]}"; do
+      if curl -f "http://${service}-service:300${services[@]/$service}/health" > /dev/null 2>&1; then
+        echo "$service service is healthy"
+      else
+        echo "$service service is not healthy"
+        exit 1
+      fi
+    done
+    
+    echo "All services are healthy - recovery successful!"

@@ -1,0 +1,90 @@
+# Security Hardening Configuration for DaorsAgro
+# This file contains security improvements for the infrastructure
+
+version: '3.8'
+
+# Security-hardened database configurations
+x-postgres-security: &postgres-security
+  environment:
+    POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+  secrets:
+    - postgres_password
+  command: >
+    postgres
+    -c ssl=on
+    -c ssl_cert_file=/var/lib/postgresql/server.crt
+    -c ssl_key_file=/var/lib/postgresql/server.key
+    -c log_connections=on
+    -c log_disconnections=on
+    -c log_statement=all
+    -c shared_preload_libraries=pg_stat_statements
+
+x-mongodb-security: &mongodb-security
+  environment:
+    MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_password
+  secrets:
+    - mongo_password
+  command: >
+    mongod
+    --auth
+    --tlsMode requireTLS
+    --tlsCertificateKeyFile /etc/ssl/mongodb.pem
+    --tlsCAFile /etc/ssl/ca.pem
+    --auditDestination file
+    --auditPath /var/log/mongodb/audit.log
+
+x-redis-security: &redis-security
+  command: >
+    redis-server
+    --requirepass $(cat /run/secrets/redis_password)
+    --tls-port 6380
+    --port 0
+    --tls-cert-file /etc/ssl/redis.crt
+    --tls-key-file /etc/ssl/redis.key
+    --tls-ca-cert-file /etc/ssl/ca.crt
+  secrets:
+    - redis_password
+
+# Network security
+networks:
+  daorsagro-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "false"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# Secrets management
+secrets:
+  postgres_password:
+    external: true
+  mongo_password:
+    external: true
+  redis_password:
+    external: true
+  jwt_secret:
+    external: true
+  jwt_refresh_secret:
+    external: true
+  clickhouse_password:
+    external: true
+  grafana_password:
+    external: true
+
+# Security configurations for services
+x-service-security: &service-security
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  cap_add:
+    - NET_BIND_SERVICE
+  read_only: true
+  tmpfs:
+    - /tmp:noexec,nosuid,size=100m
+    - /var/run:noexec,nosuid,size=100m
+  sysctls:
+    - net.ipv4.ip_unprivileged_port_start=0
