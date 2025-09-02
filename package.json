@@ -83,5 +83,21 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/daorsagro/platform.git"
+  },
+  "dependencies": {
+    "@clickhouse/client": "^0.2.10",
+    "@elastic/elasticsearch": "^8.19.1",
+    "@prisma/client": "^6.15.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "dotenv": "^16.3.1",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.0.1",
+    "helmet": "^8.1.0",
+    "http-proxy-middleware": "^2.0.9",
+    "ioredis": "^5.7.0",
+    "joi": "^18.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "kafkajs": "^2.2.4",
+    "winston": "^3.17.0"
   }
 }
