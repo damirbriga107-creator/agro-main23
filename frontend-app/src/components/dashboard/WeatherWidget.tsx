@@ -1,13 +1,6 @@
 import React from 'react';
 import { useQuery } from 'react-query';
-import { 
-  CloudIcon,
-  SunIcon,
-  CloudRainIcon,
-  EyeIcon,
-  WindIcon,
-  DropIcon
-} from '@heroicons/react/24/outline';
+import { Cloud, Sun, CloudRain, Eye, Wind, Droplet } from 'lucide-react';
 
 interface WeatherData {
   location: string;
@@ -60,7 +53,7 @@ const WeatherWidget: React.FC = () => {
   const getWeatherIcon = (condition: string) => {
     switch (condition) {
       case 'sunny':
-        return <SunIcon className="h-8 w-8 text-yellow-500" />;
+        return <Sun className="h-8 w-8 text-yellow-500" />;
       case 'cloudy':
       case 'partly-cloudy':
         return <CloudIcon className="h-8 w-8 text-gray-500" />;
