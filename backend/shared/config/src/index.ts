@@ -206,7 +206,7 @@ export class DatabaseConfigFactory {
         },
       };
     } catch (error) {
-      throw new Error(`Invalid database URL: ${error.message}`);
+      throw new Error(`Invalid database URL: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }

@@ -62,6 +62,15 @@ importers:
 
   backend/api-gateway:
     dependencies:
+      '@daorsagro/config':
+        specifier: workspace:*
+        version: link:../shared/config
+      '@daorsagro/types':
+        specifier: workspace:*
+        version: link:../shared/types
+      '@daorsagro/utils':
+        specifier: workspace:*
+        version: link:../shared/utils
       compression:
         specifier: ^1.8.1
         version: 1.8.1
