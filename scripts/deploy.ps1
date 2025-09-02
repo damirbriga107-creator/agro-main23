@@ -207,7 +207,7 @@ function Build-DockerImages {
     Set-Location $PROJECT_ROOT
     
     # Build API Gateway image
-    docker build -t "$DOCKER_REGISTRY/api-gateway:$Version" -f backend/api-gateway/Dockerfile .
+    docker build -t "${DOCKER_REGISTRY}/api-gateway:${Version}" -f backend/api-gateway/Dockerfile .
     Write-Success "API Gateway image built"
     
     # Build service images
@@ -215,12 +215,12 @@ function Build-DockerImages {
                   "analytics-service", "document-service", "notification-service", "iot-service")
     
     foreach ($service in $services) {
-        docker build -t "$DOCKER_REGISTRY/$service:$Version" -f "backend/services/$service/Dockerfile" .
+        docker build -t "${DOCKER_REGISTRY}/${service}:${Version}" -f "backend/services/$service/Dockerfile" .
         Write-Success "$service image built"
     }
     
     # Build frontend image
-    docker build -t "$DOCKER_REGISTRY/frontend:$Version" -f frontend-app/Dockerfile .
+    docker build -t "${DOCKER_REGISTRY}/frontend:${Version}" -f frontend-app/Dockerfile .
     Write-Success "Frontend image built"
 }
 
@@ -235,7 +235,7 @@ function Push-DockerImages {
     docker login ghcr.io
     
     # Push API Gateway image
-    docker push "$DOCKER_REGISTRY/api-gateway:$Version"
+    docker push "${DOCKER_REGISTRY}/api-gateway:${Version}"
     Write-Success "API Gateway image pushed"
     
     # Push service images
@@ -243,12 +243,12 @@ function Push-DockerImages {
                   "analytics-service", "document-service", "notification-service", "iot-service")
     
     foreach ($service in $services) {
-        docker push "$DOCKER_REGISTRY/$service:$Version"
+        docker push "${DOCKER_REGISTRY}/${service}:${Version}"
         Write-Success "$service image pushed"
     }
     
     # Push frontend image
-    docker push "$DOCKER_REGISTRY/frontend:$Version"
+    docker push "${DOCKER_REGISTRY}/frontend:${Version}"
     Write-Success "Frontend image pushed"
 }
 
