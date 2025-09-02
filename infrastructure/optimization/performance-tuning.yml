@@ -1,0 +1,287 @@
+# Performance Optimization Configuration for DaorsAgro
+# This file contains performance tuning parameters for all components
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: performance-config
+  namespace: daorsagro
+data:
+  # Node.js Performance Tuning
+  nodejs-optimization.conf: |
+    # Memory management
+    NODE_OPTIONS="--max-old-space-size=2048 --max-semi-space-size=128"
+    UV_THREADPOOL_SIZE=16
+    
+    # Garbage collection optimization
+    NODE_OPTIONS="$NODE_OPTIONS --expose-gc --optimize-for-size"
+    
+    # V8 engine optimizations
+    NODE_OPTIONS="$NODE_OPTIONS --max-inlined-source-size=600"
+    NODE_OPTIONS="$NODE_OPTIONS --max-inlined-bytecode-size=600"
+    
+    # Event loop optimization
+    UV_USE_IO_URING=1
+    
+    # DNS optimization
+    NODE_OPTIONS="$NODE_OPTIONS --dns-result-order=ipv4first"
+
+  # Database Performance Tuning
+  postgresql-performance.conf: |
+    # Memory settings
+    shared_buffers = 256MB
+    effective_cache_size = 1GB
+    work_mem = 4MB
+    maintenance_work_mem = 64MB
+    
+    # Checkpoint settings
+    checkpoint_completion_target = 0.9
+    wal_buffers = 16MB
+    min_wal_size = 1GB
+    max_wal_size = 4GB
+    
+    # Query planner settings
+    default_statistics_target = 100
+    random_page_cost = 1.1
+    effective_io_concurrency = 200
+    
+    # Connection settings
+    max_connections = 200
+    
+    # Logging for performance analysis
+    log_statement = 'mod'
+    log_min_duration_statement = 1000
+    log_checkpoints = on
+    log_connections = on
+    log_disconnections = on
+    log_lock_waits = on
+    
+    # Autovacuum tuning
+    autovacuum_max_workers = 3
+    autovacuum_naptime = 20s
+    autovacuum_vacuum_threshold = 50
+    autovacuum_analyze_threshold = 50
+
+  mongodb-performance.conf: |
+    # WiredTiger storage engine optimization
+    storage:
+      wiredTiger:
+        engineConfig:
+          cacheSizeGB: 1
+          journalCompressor: snappy
+          directoryForIndexes: true
+        collectionConfig:
+          blockCompressor: snappy
+        indexConfig:
+          prefixCompression: true
+    
+    # Network settings
+    net:
+      maxIncomingConnections: 200
+      compression:
+        compressors: snappy,zstd
+    
+    # Operation profiling
+    operationProfiling:
+      mode: slowOp
+      slowOpThresholdMs: 100
+    
+    # Logging
+    systemLog:
+      verbosity: 1
+      component:
+        query:
+          verbosity: 2
+
+  redis-performance.conf: |
+    # Memory optimization
+    maxmemory 512mb
+    maxmemory-policy allkeys-lru
+    
+    # Persistence optimization
+    save 900 1
+    save 300 10
+    save 60 10000
+    
+    # AOF configuration
+    appendonly yes
+    appendfsync everysec
+    no-appendfsync-on-rewrite no
+    auto-aof-rewrite-percentage 100
+    auto-aof-rewrite-min-size 64mb
+    
+    # Network optimization
+    tcp-keepalive 300
+    timeout 0
+    
+    # Performance tuning
+    hash-max-ziplist-entries 512
+    hash-max-ziplist-value 64
+    list-max-ziplist-size -2
+    list-compress-depth 0
+    set-max-intset-entries 512
+    zset-max-ziplist-entries 128
+    zset-max-ziplist-value 64
+
+  # Application-level caching strategy
+  caching-strategy.conf: |
+    # Redis cache configuration
+    CACHE_TTL_SHORT=300      # 5 minutes
+    CACHE_TTL_MEDIUM=1800    # 30 minutes
+    CACHE_TTL_LONG=3600      # 1 hour
+    CACHE_TTL_EXTENDED=86400 # 24 hours
+    
+    # Cache keys patterns
+    USER_CACHE_KEY="user:{userId}"
+    FARM_CACHE_KEY="farm:{farmId}"
+    FINANCIAL_CACHE_KEY="financial:{userId}:{type}"
+    SUBSIDY_CACHE_KEY="subsidy:{region}:{type}"
+    INSURANCE_CACHE_KEY="insurance:{provider}:{type}"
+    ANALYTICS_CACHE_KEY="analytics:{userId}:{period}"
+    
+    # Cache warming strategies
+    CACHE_WARM_ON_STARTUP=true
+    CACHE_WARM_POPULAR_DATA=true
+    CACHE_PRELOAD_USER_DATA=true
+
+  # API optimization settings
+  api-optimization.conf: |
+    # Rate limiting
+    RATE_LIMIT_WINDOW_MS=60000
+    RATE_LIMIT_MAX_REQUESTS=1000
+    RATE_LIMIT_AUTH_MAX=5
+    
+    # Request timeout
+    REQUEST_TIMEOUT=30000
+    
+    # Compression
+    COMPRESSION_ENABLED=true
+    COMPRESSION_THRESHOLD=1024
+    
+    # Keep-alive settings
+    KEEP_ALIVE_TIMEOUT=5000
+    HEADERS_TIMEOUT=60000
+    
+    # Body parsing limits
+    JSON_LIMIT="10mb"
+    URL_ENCODED_LIMIT="10mb"
+    
+    # Connection pooling
+    DB_POOL_MIN=5
+    DB_POOL_MAX=20
+    DB_POOL_IDLE_TIMEOUT=30000
+    DB_POOL_ACQUIRE_TIMEOUT=60000
+
+---
+# Performance monitoring deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: performance-monitor
+  namespace: daorsagro
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: performance-monitor
+  template:
+    metadata:
+      labels:
+        app: performance-monitor
+    spec:
+      containers:
+      - name: performance-monitor
+        image: prom/node-exporter:latest
+        ports:
+        - containerPort: 9100
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        volumeMounts:
+        - name: proc
+          mountPath: /host/proc
+          readOnly: true
+        - name: sys
+          mountPath: /host/sys
+          readOnly: true
+        - name: rootfs
+          mountPath: /rootfs
+          readOnly: true
+        args:
+        - '--path.procfs=/host/proc'
+        - '--path.sysfs=/host/sys'
+        - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+      volumes:
+      - name: proc
+        hostPath:
+          path: /proc
+      - name: sys
+        hostPath:
+          path: /sys
+      - name: rootfs
+        hostPath:
+          path: /
+      hostNetwork: true
+      hostPID: true
+
+---
+# Application Performance Monitoring (APM) configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apm-config
+  namespace: daorsagro
+data:
+  apm-server.yml: |
+    apm-server:
+      host: "0.0.0.0:8200"
+      
+    output.elasticsearch:
+      hosts: ["elasticsearch-service:9200"]
+      
+    setup.kibana:
+      host: "kibana-service:5601"
+      
+    logging.level: info
+    logging.to_files: true
+    logging.files:
+      path: /var/log/apm-server
+      name: apm-server
+      keepfiles: 7
+      permissions: 0644
+
+  performance-alerts.yml: |
+    # Performance-based alerting rules
+    groups:
+    - name: performance
+      rules:
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}s"
+      
+      - alert: HighMemoryUsage
+        expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}%"
+      
+      - alert: HighCPUUsage
+        expr: (rate(container_cpu_usage_seconds_total[5m]) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}%"
