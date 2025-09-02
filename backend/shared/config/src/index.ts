@@ -1,10 +1,26 @@
 import Joi from 'joi';
 import { config as dotenvConfig } from 'dotenv';
+import { readFileSync, existsSync } from 'fs';
 
 import { DatabaseConfig, RedisConfig, KafkaConfig, JWTConfig, ServiceConfig } from '@daorsagro/types';
 
 // Load environment variables
 dotenvConfig();
+
+/**
+ * Helper function to read secrets from files or environment variables
+ */
+function readSecret(key: string): string | undefined {
+  const file = process.env[`${key}_FILE`];
+  if (file && existsSync(file)) {
+    try { 
+      return readFileSync(file, 'utf8').trim(); 
+    } catch { 
+      /* noop */ 
+    }
+  }
+  return process.env[key];
+}
 
 /**
  * Configuration validation schemas
@@ -219,9 +235,11 @@ export class RedisConfigFactory {
    * Create Redis configuration from environment variables
    */
   static create(): RedisConfig {
+    const password = readSecret('REDIS_PASSWORD'); // supports REDIS_PASSWORD_FILE
+    
     const config = {
       url: process.env.REDIS_URL || 'redis://localhost:6379',
-      password: process.env.REDIS_PASSWORD,
+      password,
       ttl: parseInt(process.env.REDIS_TTL || '3600', 10),
       maxRetries: parseInt(process.env.REDIS_MAX_RETRIES || '3', 10),
     };
@@ -275,9 +293,12 @@ export class JWTConfigFactory {
    * Create JWT configuration from environment variables
    */
   static create(): JWTConfig {
+    const secret = readSecret('JWT_SECRET');
+    const refreshSecret = readSecret('JWT_REFRESH_SECRET');
+    
     const config = {
-      secret: process.env.JWT_SECRET,
-      refreshSecret: process.env.JWT_REFRESH_SECRET,
+      secret,
+      refreshSecret,
       expiresIn: process.env.JWT_ACCESS_EXPIRY || '15m',
       refreshExpiresIn: process.env.JWT_REFRESH_EXPIRY || '7d',
       algorithm: process.env.JWT_ALGORITHM || 'HS256',
@@ -409,12 +430,22 @@ export class EnvironmentUtils {
   }
 
   /**
-   * Get array environment variable (comma-separated)
+   * Get array environment variable (JSON or comma-separated)
    */
   static getArray(key: string, defaultValue: string[] = []): string[] {
     const value = process.env[key];
     if (!value) return defaultValue;
-    return value.split(',').map(item => item.trim());
+    
+    // Try JSON parsing first
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed;
+    } catch { 
+      /* fallback to CSV */ 
+    }
+    
+    // Fallback to comma-separated values
+    return value.split(',').map(s => s.trim()).filter(Boolean);
   }
 
   /**

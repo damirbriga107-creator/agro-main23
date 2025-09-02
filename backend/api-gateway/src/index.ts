@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import rateLimit from 'express-rate-limit';
 import slowDown from 'express-slow-down';
+import { createClient } from 'redis';
 
 import { ServiceConfigFactory, EnvironmentUtils } from '@daorsagro/config';
 import { TokenUtils, ErrorUtils } from '@daorsagro/utils';
@@ -30,6 +31,7 @@ class ApiGateway {
   private healthCheckService: HealthCheckService;
   private metricsService: MetricsService;
   private serviceDiscovery: ServiceDiscoveryService;
+  private cacheClient: any;
 
   constructor() {
     this.app = express();
@@ -43,6 +45,11 @@ class ApiGateway {
     this.setupRoutes();
     this.setupProxies();
     this.setupErrorHandling();
+    
+    // Initialize cache client asynchronously
+    this.initializeCacheClient().catch(err => {
+      this.logger.warn('Failed to initialize cache client:', err);
+    });
   }
 
   /**
@@ -153,6 +160,55 @@ class ApiGateway {
     this.app.use('/api', generalLimiter);
     this.app.use('/api/v1/auth', authLimiter);
     this.app.use('/api/v1/analytics', speedLimiter);
+    
+    // Setup cache middleware for analytics routes
+    this.setupCacheMiddleware();
+  }
+
+  /**
+   * Initialize cache client
+   */
+  private async initializeCacheClient(): Promise<void> {
+    try {
+      this.cacheClient = createClient({ 
+        url: process.env.REDIS_URL, 
+        password: process.env.REDIS_PASSWORD 
+      });
+      this.cacheClient.on('error', (err: any) => {
+        this.logger.error('Cache client error:', err);
+      });
+      await this.cacheClient.connect();
+      this.logger.info('✅ Cache client connected');
+    } catch (error) {
+      this.logger.warn('Cache client initialization failed, caching disabled:', error);
+      this.cacheClient = null;
+    }
+  }
+
+  /**
+   * Setup cache middleware for read-heavy routes
+   */
+  private setupCacheMiddleware(): void {
+    // Simple GET response caching for analytics routes
+    this.app.use('/api/v1/analytics', async (req, res, next) => {
+      if (req.method !== 'GET' || !this.cacheClient) return next();
+      
+      const key = `gwcache:${req.originalUrl}`;
+      try {
+        const hit = await this.cacheClient.get(key);
+        if (hit) return res.set('X-Cache', 'HIT').json(JSON.parse(hit));
+      } catch { /* ignore cache errors */ }
+      
+      const json = res.json.bind(res);
+      res.json = (body: any) => {
+        try { 
+          this.cacheClient.setEx(key, parseInt(process.env.GW_CACHE_TTL || '30', 10), JSON.stringify(body)); 
+        } catch {}
+        res.set('X-Cache', 'MISS');
+        return json(body);
+      };
+      next();
+    });
   }
 
   /**

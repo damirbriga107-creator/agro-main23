@@ -3,7 +3,23 @@ import { MongoClient, Db } from 'mongodb';
 import { createClient, RedisClientType } from 'redis';
 import { createClient as createClickHouseClient, ClickHouseClient } from '@clickhouse/client';
 import { Client as ElasticsearchClient } from '@elastic/elasticsearch';
+import { readFileSync, existsSync } from 'fs';
 import { DatabaseConnection, DatabaseConfig } from './types';
+
+/**
+ * Helper function to read secrets from files or environment variables
+ */
+function readSecretLocal(key: string): string | undefined {
+  const file = process.env[`${key}_FILE`];
+  if (file && existsSync(file)) {
+    try { 
+      return readFileSync(file, 'utf8').trim(); 
+    } catch { 
+      /* noop */ 
+    }
+  }
+  return process.env[key];
+}
 
 export class DatabaseConnectionManager {
   private connections: Map<string, DatabaseConnection> = new Map();
@@ -30,63 +46,65 @@ export class DatabaseConnectionManager {
    * Initialize PostgreSQL connection
    */
   async initializePostgreSQL(): Promise<Pool> {
-    try {
-      const pool = new Pool({
-        host: this.config.postgresql.host,
-        port: this.config.postgresql.port,
-        database: this.config.postgresql.database,
-        user: this.config.postgresql.username,
-        password: this.config.postgresql.password,
-        ssl: this.config.postgresql.ssl,
-        max: 20,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 2000,
-      });
+    const max = parseInt(process.env.PG_POOL_MAX || '20', 10);
+    const idle = parseInt(process.env.PG_POOL_IDLE || '30000', 10);
+    const connTimeout = parseInt(process.env.PG_CONN_TIMEOUT || '2000', 10);
 
-      // Test connection
-      const client = await pool.connect();
-      await client.query('SELECT NOW()');
-      client.release();
-
-      this.connections.set('postgresql', {
-        type: 'postgresql',
-        connection: pool,
-        isConnected: true,
-      });
-
-      console.log('✅ PostgreSQL connection established');
-      return pool;
-    } catch (error) {
-      console.error('❌ PostgreSQL connection failed:', error);
-      throw error;
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      try {
+        const pool = new Pool({
+          host: this.config.postgresql.host,
+          port: this.config.postgresql.port,
+          database: this.config.postgresql.database,
+          user: this.config.postgresql.username,
+          password: this.config.postgresql.password,
+          ssl: this.config.postgresql.ssl,
+          max,
+          idleTimeoutMillis: idle,
+          connectionTimeoutMillis: connTimeout,
+        });
+        const client = await pool.connect();
+        await client.query('SELECT NOW()');
+        client.release();
+        this.connections.set('postgresql', { type: 'postgresql', connection: pool, isConnected: true });
+        console.log('✅ PostgreSQL connection established');
+        return pool;
+      } catch (error) {
+        console.error(`PostgreSQL connection attempt ${attempt} failed:`, (error as any).message);
+        if (attempt === 5) throw error;
+        await new Promise(r => setTimeout(r, Math.min(1000 * Math.pow(2, attempt), 10000)));
+      }
     }
+    throw new Error('Unexpected PostgreSQL init flow');
   }
 
   /**
    * Initialize MongoDB connection
    */
   async initializeMongoDB(): Promise<Db> {
-    try {
-      const client = new MongoClient(this.config.mongodb.url);
-      await client.connect();
-      
-      const db = client.db(this.config.mongodb.database);
-      
-      // Test connection
-      await db.admin().ping();
+    const url = this.config.mongodb.url;
+    const client = new MongoClient(url, {
+      maxPoolSize: parseInt(process.env.MONGO_MAX_POOL || '50', 10),
+      minPoolSize: parseInt(process.env.MONGO_MIN_POOL || '5', 10),
+      serverSelectionTimeoutMS: parseInt(process.env.MONGO_SRV_SELECT_TIMEOUT || '10000', 10),
+      retryWrites: true,
+    });
 
-      this.connections.set('mongodb', {
-        type: 'mongodb',
-        connection: { client, db },
-        isConnected: true,
-      });
-
-      console.log('✅ MongoDB connection established');
-      return db;
-    } catch (error) {
-      console.error('❌ MongoDB connection failed:', error);
-      throw error;
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      try {
+        await client.connect();
+        const db = client.db(this.config.mongodb.database);
+        await db.admin().ping();
+        this.connections.set('mongodb', { type: 'mongodb', connection: { client, db }, isConnected: true });
+        console.log('✅ MongoDB connection established');
+        return db;
+      } catch (error) {
+        console.error(`MongoDB connection attempt ${attempt} failed:`, (error as any).message);
+        if (attempt === 5) throw error;
+        await new Promise(r => setTimeout(r, Math.min(1000 * Math.pow(2, attempt), 10000)));
+      }
     }
+    throw new Error('Unexpected MongoDB init flow');
   }
 
   /**
@@ -94,25 +112,20 @@ export class DatabaseConnectionManager {
    */
   async initializeRedis(): Promise<RedisClientType> {
     try {
+      const password = this.config.redis?.password || readSecretLocal('REDIS_PASSWORD');
       const client = createClient({
         url: this.config.redis.url,
+        password,
+        socket: {
+          reconnectStrategy: (retries) => Math.min(1000 * Math.pow(2, retries), 15000),
+        },
       });
 
-      client.on('error', (err) => {
-        console.error('Redis Client Error:', err);
-      });
+      client.on('error', (err) => console.error('Redis Client Error:', err));
 
       await client.connect();
-
-      // Test connection
       await client.ping();
-
-      this.connections.set('redis', {
-        type: 'redis',
-        connection: client,
-        isConnected: true,
-      });
-
+      this.connections.set('redis', { type: 'redis', connection: client, isConnected: true });
       console.log('✅ Redis connection established');
       return client;
     } catch (error) {
