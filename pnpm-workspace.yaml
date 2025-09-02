@@ -1,0 +1,6 @@
+packages:
+  - 'backend/shared/**'
+  - 'backend/api-gateway'
+  - 'backend/services/**'
+  - 'frontend-app'
+  - 'daorsagro-frontend'
