@@ -118,7 +118,7 @@ export declare class EnvironmentUtils {
      */
     static getNumber(key: string, defaultValue: number): number;
     /**
-     * Get array environment variable (comma-separated)
+     * Get array environment variable (JSON or comma-separated)
      */
     static getArray(key: string, defaultValue?: string[]): string[];
     /**
