@@ -1,4 +1,4 @@
-﻿Uninstall run: 2025-09-03T02:36:51.3445050+02:00
+﻿Uninstall run: 2025-09-03T02:42:34.8075119+02:00
 ---\nUninstalling: golang.go
 code.cmd : Extension 'golang.go' is not installed.
 At C:\Users\User\Downloads\agro-main\scripts\remove-vscode-exten
