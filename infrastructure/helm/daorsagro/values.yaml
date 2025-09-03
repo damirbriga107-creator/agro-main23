@@ -1,0 +1,411 @@
+# Default values for daorsagro
+# This is a YAML-formatted file.
+
+# Global configuration
+global:
+  imageRegistry: ghcr.io
+  imagePullSecrets:
+    - name: ghcr-secret
+  storageClass: "fast-ssd"
+
+# Application configuration
+app:
+  name: daorsagro
+  version: "1.0.0"
+  environment: production
+  domain: yourdomain.com
+  
+# Image configuration
+image:
+  registry: ghcr.io
+  repository: daorsagro/platform
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# API Gateway configuration
+apiGateway:
+  enabled: true
+  name: api-gateway
+  replicaCount: 3
+  image:
+    repository: daorsagro/platform/api-gateway
+    tag: latest
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 500m
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 3000
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 3000
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+# Microservices configuration
+microservices:
+  authService:
+    enabled: true
+    name: auth-service
+    replicaCount: 2
+    image:
+      repository: daorsagro/platform/auth-service
+      tag: latest
+    service:
+      port: 3001
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 250m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+        
+  financialService:
+    enabled: true
+    name: financial-service
+    replicaCount: 2
+    image:
+      repository: daorsagro/platform/financial-service
+      tag: latest
+    service:
+      port: 3002
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 250m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+        
+  subsidyService:
+    enabled: true
+    name: subsidy-service
+    replicaCount: 1
+    image:
+      repository: daorsagro/platform/subsidy-service
+      tag: latest
+    service:
+      port: 3003
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 250m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+        
+  insuranceService:
+    enabled: true
+    name: insurance-service
+    replicaCount: 1
+    image:
+      repository: daorsagro/platform/insurance-service
+      tag: latest
+    service:
+      port: 3004
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 250m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+        
+  analyticsService:
+    enabled: true
+    name: analytics-service
+    replicaCount: 1
+    image:
+      repository: daorsagro/platform/analytics-service
+      tag: latest
+    service:
+      port: 3005
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 250m
+      limits:
+        memory: 1Gi
+        cpu: 500m
+        
+  documentService:
+    enabled: true
+    name: document-service
+    replicaCount: 1
+    image:
+      repository: daorsagro/platform/document-service
+      tag: latest
+    service:
+      port: 3006
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 250m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+        
+  notificationService:
+    enabled: true
+    name: notification-service
+    replicaCount: 1
+    image:
+      repository: daorsagro/platform/notification-service
+      tag: latest
+    service:
+      port: 3007
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 250m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+        
+  iotService:
+    enabled: true
+    name: iot-service
+    replicaCount: 1
+    image:
+      repository: daorsagro/platform/iot-service
+      tag: latest
+    service:
+      port: 3008
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 250m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+
+# Frontend configuration
+frontend:
+  enabled: true
+  name: frontend-app
+  replicaCount: 3
+  image:
+    repository: daorsagro/platform/frontend-app
+    tag: latest
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 250m
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+
+# Database configurations
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "your-secure-postgres-password"
+    database: "daorsagro"
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: "fast-ssd"
+    resources:
+      requests:
+        memory: 1Gi
+        cpu: 500m
+      limits:
+        memory: 2Gi
+        cpu: 1000m
+
+mongodb:
+  enabled: true
+  auth:
+    rootPassword: "your-secure-mongo-password"
+    database: "daorsagro"
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: "fast-ssd"
+  resources:
+    requests:
+      memory: 1Gi
+      cpu: 500m
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+
+redis:
+  enabled: true
+  auth:
+    password: "your-secure-redis-password"
+  master:
+    persistence:
+      enabled: true
+      size: 5Gi
+      storageClass: "fast-ssd"
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 250m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+
+kafka:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: "fast-ssd"
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 500m
+
+elasticsearch:
+  enabled: true
+  master:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: "fast-ssd"
+    resources:
+      requests:
+        memory: 1Gi
+        cpu: 500m
+      limits:
+        memory: 2Gi
+        cpu: 1000m
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+  hosts:
+    - host: yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: frontend-app
+          port: 80
+    - host: api.yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: api-gateway
+          port: 3000
+  tls:
+    - secretName: daorsagro-tls
+      hosts:
+        - yourdomain.com
+        - api.yourdomain.com
+
+# Monitoring configuration
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
+    adminPassword: "your-secure-grafana-password"
+
+# Security configuration
+security:
+  networkPolicy:
+    enabled: true
+  podSecurityPolicy:
+    enabled: true
+  rbac:
+    enabled: true
+
+# Configuration for secrets
+secrets:
+  # Database passwords
+  postgresPassword: "your-secure-postgres-password"
+  mongoPassword: "your-secure-mongo-password"
+  redisPassword: "your-secure-redis-password"
+  
+  # JWT secrets
+  jwtSecret: "your-super-secure-jwt-secret-key"
+  jwtRefreshSecret: "your-super-secure-refresh-secret-key"
+  
+  # External service API keys
+  emailApiKey: "your-sendgrid-api-key"
+  paymentApiKey: "your-stripe-api-key"
+  s3AccessKey: "your-s3-access-key"
+  s3SecretKey: "your-s3-secret-key"
+
+# Environment variables
+env:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  LOG_FORMAT: "json"
+  
+# Service account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Pod security context
+podSecurityContext:
+  fsGroup: 1001
+  runAsNonRoot: true
+  runAsUser: 1001
+
+# Security context
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1001
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Persistence
+persistence:
+  enabled: true
+  storageClass: "fast-ssd"
+  accessMode: ReadWriteOnce
+  size: 10Gi

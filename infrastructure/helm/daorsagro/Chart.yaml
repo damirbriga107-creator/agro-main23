@@ -1,0 +1,39 @@
+apiVersion: v2
+name: daorsagro
+description: A Helm chart for DaorsAgro Agricultural Financial Management Platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+home: https://github.com/daorsagro/platform
+sources:
+  - https://github.com/daorsagro/platform
+maintainers:
+  - name: DaorsAgro Team
+    email: admin@daorsagro.com
+keywords:
+  - agriculture
+  - financial-management
+  - microservices
+  - nodejs
+  - react
+dependencies:
+  - name: postgresql
+    version: 12.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: mongodb
+    version: 13.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: mongodb.enabled
+  - name: redis
+    version: 17.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+  - name: kafka
+    version: 22.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: kafka.enabled
+  - name: elasticsearch
+    version: 19.x.x
+    repository: https://charts.bitnami.com/bitnami
+    condition: elasticsearch.enabled
