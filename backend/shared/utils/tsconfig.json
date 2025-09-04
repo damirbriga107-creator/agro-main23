@@ -10,7 +10,12 @@
     "incremental": true,
     "noEmit": false,
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@daorsagro/config": ["../config/dist"],
+      "@daorsagro/types": ["../types/dist"]
+    }
   },
   "include": [
     "src/**/*"
