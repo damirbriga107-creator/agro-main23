@@ -41,7 +41,7 @@ export class PostgresConnection {
   }
 
   private setupEventListeners(): void {
-    this.client.$on('query', (e) => {
+    this.client.$on('query', (e: any) => {
       this.logger.debug('Query executed', {
         query: e.query,
         params: e.params,
@@ -50,15 +50,15 @@ export class PostgresConnection {
       });
     });
 
-    this.client.$on('error', (e) => {
+    this.client.$on('error', (e: any) => {
       this.logger.error('Prisma error', e);
     });
 
-    this.client.$on('info', (e) => {
+    this.client.$on('info', (e: any) => {
       this.logger.info('Prisma info', e);
     });
 
-    this.client.$on('warn', (e) => {
+    this.client.$on('warn', (e: any) => {
       this.logger.warn('Prisma warning', e);
     });
   }
@@ -113,7 +113,7 @@ export class PostgresConnection {
 export class MongoConnection {
   private static instance: MongoConnection;
   private client: MongoClient;
-  private db: Db;
+  private db!: Db;
   private logger: Logger;
   private isConnected: boolean = false;
   private connectionUrl: string;
@@ -206,7 +206,7 @@ export class ClickHouseConnection {
     const configManager = ConfigManager.getInstance();
     
     this.client = createClient({
-      url: configManager.get('CLICKHOUSE_URL'),
+      host: configManager.get('CLICKHOUSE_URL'),
       username: configManager.get('CLICKHOUSE_USERNAME', 'default'),
       password: configManager.get('CLICKHOUSE_PASSWORD', ''),
       database: configManager.get('CLICKHOUSE_DATABASE', 'default'),
@@ -218,7 +218,7 @@ export class ClickHouseConnection {
         response: true,
         request: true,
       },
-    });
+    } as any);
   }
 
   public static getInstance(): ClickHouseConnection {
@@ -287,14 +287,13 @@ export class RedisConnection {
     
     this.client = new Redis({
       host: configManager.get('REDIS_HOST', 'localhost'),
-      port: configManager.get('REDIS_PORT', 6379),
-      password: configManager.get('REDIS_PASSWORD', undefined),
-      retryDelayOnFailover: 100,
+      port: Number(configManager.get('REDIS_PORT', 6379)),
+      password: configManager.get('REDIS_PASSWORD', undefined as any),
       maxRetriesPerRequest: 3,
       lazyConnect: true,
       keepAlive: 30000,
       family: 4,
-    });
+    } as any);
 
     this.setupEventListeners();
   }

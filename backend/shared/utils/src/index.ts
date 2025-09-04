@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import type { Secret, SignOptions, Algorithm, StringValue } from 'jsonwebtoken';
+import type { Secret, SignOptions, Algorithm } from 'jsonwebtoken';
 import { nanoid } from 'nanoid';
 import crypto from 'crypto';
 import { isNull, isUndefined, isEmpty } from 'lodash';
@@ -68,16 +68,24 @@ export class TokenUtils {
   /**
    * Generate JWT access token
    */
-  static generateAccessToken(payload: Omit<TokenPayload, 'iat' | 'exp'>, secret: string, expiresIn: string = '15m'): string {
-    const opts: SignOptions = { expiresIn, algorithm: 'HS256' as Algorithm };
+  static generateAccessToken(
+    payload: Omit<TokenPayload, 'iat' | 'exp'>,
+    secret: string,
+    expiresIn: string | number = '15m'
+  ): string {
+    const opts: SignOptions = { expiresIn: expiresIn as any, algorithm: 'HS256' as Algorithm };
     return jwt.sign(payload as object, secret as Secret, opts);
   }
 
   /**
    * Generate JWT refresh token
    */
-  static generateRefreshToken(payload: Omit<TokenPayload, 'iat' | 'exp'>, secret: string, expiresIn: string = '7d'): string {
-    const opts: SignOptions = { expiresIn, algorithm: 'HS256' as Algorithm };
+  static generateRefreshToken(
+    payload: Omit<TokenPayload, 'iat' | 'exp'>,
+    secret: string,
+    expiresIn: string | number = '7d'
+  ): string {
+    const opts: SignOptions = { expiresIn: expiresIn as any, algorithm: 'HS256' as Algorithm };
     return jwt.sign(payload as object, secret as Secret, opts);
   }
 

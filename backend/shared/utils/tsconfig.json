@@ -24,6 +24,9 @@
   "references": [
     {
       "path": "../types"
+    },
+    {
+      "path": "../config"
     }
   ]
 }

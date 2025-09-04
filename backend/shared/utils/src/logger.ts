@@ -15,9 +15,9 @@ export class Logger {
 
   private createLogger(): winston.Logger {
     const configManager = ConfigManager.getInstance();
-    const logLevel = configManager.get('LOG_LEVEL', 'info') as string;
-    const logFormat = configManager.get('LOG_FORMAT', 'json') as string;
-    const nodeEnv = (configManager.get('NODE_ENV', 'development') as string) || 'development';
+    const logLevel = configManager.get<string>('LOG_LEVEL', 'info');
+    const logFormat = configManager.get<string>('LOG_FORMAT', 'json');
+    const nodeEnv = configManager.get<string>('NODE_ENV', 'development');
 
     // Custom format for console output
     const consoleFormat = winston.format.combine(
