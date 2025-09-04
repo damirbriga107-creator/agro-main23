@@ -232,14 +232,18 @@ export class ServiceDiscoveryService {
     const startTime = Date.now();
     
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
       const response = await fetch(`${service.url}/health`, {
         method: 'GET',
-        timeout: 5000, // 5 second timeout
+        // emulate timeout with AbortController
+        signal: controller.signal,
         headers: {
           'User-Agent': 'API-Gateway-Health-Check',
           'X-Request-ID': require('crypto').randomUUID()
         }
       });
+      clearTimeout(timeoutId);
 
       const responseTime = Date.now() - startTime;
       const isHealthy = response.ok;

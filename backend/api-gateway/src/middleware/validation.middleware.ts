@@ -284,7 +284,8 @@ export class ValidationMiddleware {
         required = false
       } = options;
 
-      if (!req.file && required) {
+      const file: any = (req as any).file;
+      if (!file && required) {
         res.status(400).json({
           error: {
             code: 'FILE_REQUIRED',
@@ -296,15 +297,15 @@ export class ValidationMiddleware {
         return;
       }
 
-      if (req.file) {
+      if (file) {
         // Check file size
-        if (req.file.size > maxSize) {
+        if (file.size > maxSize) {
           res.status(400).json({
             error: {
               code: 'FILE_TOO_LARGE',
               message: `File size exceeds maximum allowed size of ${maxSize} bytes`,
               maxSize,
-              actualSize: req.file.size,
+              actualSize: file.size,
               timestamp: new Date().toISOString(),
               requestId: req.headers['x-request-id']
             }
@@ -314,7 +315,7 @@ export class ValidationMiddleware {
 
         // Check file type
         if (allowedTypes.length > 0) {
-          const fileExtension = req.file.originalname.split('.').pop()?.toLowerCase();
+          const fileExtension = file.originalname.split('.').pop()?.toLowerCase();
           if (!fileExtension || !allowedTypes.includes(fileExtension)) {
             res.status(400).json({
               error: {

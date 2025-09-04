@@ -254,7 +254,7 @@ export class MetricsService {
     });
     
     const averageServiceScore = serviceScores.length > 0 ? 
-      serviceScores.reduce((sum, score) => sum + score, 0) / serviceScores.length : 100;
+      serviceScores.reduce((sum: number, score: number) => sum + score, 0) / serviceScores.length : 100;
     
     // Weighted average
     return Math.round(

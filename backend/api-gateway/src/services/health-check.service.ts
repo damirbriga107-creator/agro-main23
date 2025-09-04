@@ -93,7 +93,7 @@ export class HealthCheckService {
           this.logger.error(`Health check failed for ${name}:`, error);
           this.serviceStatuses.set(name, {
             status: 'unhealthy',
-            message: `Health check failed: ${error.message}`,
+            message: `Health check failed: ${(error as any)?.message}`,
             timestamp: new Date().toISOString()
           });
         }
@@ -121,7 +121,7 @@ export class HealthCheckService {
     } catch (error) {
       return {
         status: 'unhealthy',
-        message: `Database health check failed: ${error.message}`,
+        message: `Database health check failed: ${(error as any)?.message}`,
         timestamp: new Date().toISOString(),
         responseTime: Date.now() - startTime
       };
@@ -154,7 +154,7 @@ export class HealthCheckService {
     } catch (error) {
       return {
         status: 'unhealthy',
-        message: `Redis health check failed: ${error.message}`,
+        message: `Redis health check failed: ${(error as any)?.message}`,
         timestamp: new Date().toISOString(),
         responseTime: Date.now() - startTime
       };
@@ -208,7 +208,7 @@ export class HealthCheckService {
     } catch (error) {
       return {
         status: 'unhealthy',
-        message: `External API health check failed: ${error.message}`,
+        message: `External API health check failed: ${(error as any)?.message}`,
         timestamp: new Date().toISOString(),
         responseTime: Date.now() - startTime
       };
@@ -239,7 +239,7 @@ export class HealthCheckService {
         status: response.status
       };
     } catch (error) {
-      if (error.name === 'AbortError') {
+      if ((error as any)?.name === 'AbortError') {
         throw new Error('Health check timeout');
       }
       throw error;

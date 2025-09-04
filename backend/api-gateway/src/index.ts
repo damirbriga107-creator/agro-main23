@@ -111,7 +111,7 @@ class ApiGateway {
     this.app.use((req, res, next) => {
       req.headers['x-request-id'] = req.headers['x-request-id'] || 
         require('crypto').randomUUID();
-      res.setHeader('X-Request-ID', req.headers['x-request-id']);
+      res.setHeader('X-Request-ID', (req.headers['x-request-id'] as string) || '');
       next();
     });
   }
@@ -225,7 +225,7 @@ class ApiGateway {
         res.status(503).json({
           status: 'unhealthy',
           timestamp: new Date().toISOString(),
-          error: error.message
+          error: (error as any)?.message
         });
       }
     });
@@ -353,7 +353,7 @@ class ApiGateway {
         },
         onProxyReq: (proxyReq, req) => {
           // Add request headers
-          proxyReq.setHeader('X-Forwarded-For', req.ip);
+          proxyReq.setHeader('X-Forwarded-For', req.ip || '');
           proxyReq.setHeader('X-Gateway-Version', this.config.version);
           proxyReq.setHeader('X-Request-ID', req.headers['x-request-id'] as string);
           
@@ -378,7 +378,7 @@ class ApiGateway {
         onProxyRes: (proxyRes, req, res) => {
           // Record service response
           const duration = Date.now() - ((req as any).startTime || Date.now());
-          this.serviceDiscovery.recordServiceCall(serviceName, proxyRes.statusCode < 400, duration);
+          this.serviceDiscovery.recordServiceCall(serviceName, (proxyRes.statusCode || 0) < 400, duration);
           
           // Add service identification headers
           proxyRes.headers['X-Service-Name'] = serviceName;
@@ -540,7 +540,8 @@ class ApiGateway {
     });
     
     process.on('unhandledRejection', (reason, promise) => {
-      this.logger.error('Unhandled rejection at:', promise, 'reason:', reason);
+      // Log unhandled rejections safely, avoiding extra parameters
+      this.logger.error(`Unhandled rejection at: ${String(promise)} reason: ${(reason as any)?.message || String(reason)}`);
       process.exit(1);
     });
   }
