@@ -1,4 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+// Use minimal Express-like types to avoid requiring @types/express in shared utils
+export type Request = any;
+export type Response = any;
+export type NextFunction = (...args: any[]) => void;
 import Joi from 'joi';
 
 /**

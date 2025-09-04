@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import type { Secret, SignOptions, Algorithm, StringValue } from 'jsonwebtoken';
 import { nanoid } from 'nanoid';
 import crypto from 'crypto';
 import { isNull, isUndefined, isEmpty } from 'lodash';
@@ -68,14 +69,16 @@ export class TokenUtils {
    * Generate JWT access token
    */
   static generateAccessToken(payload: Omit<TokenPayload, 'iat' | 'exp'>, secret: string, expiresIn: string = '15m'): string {
-    return jwt.sign(payload, secret, { expiresIn, algorithm: 'HS256' });
+    const opts: SignOptions = { expiresIn, algorithm: 'HS256' as Algorithm };
+    return jwt.sign(payload as object, secret as Secret, opts);
   }
 
   /**
    * Generate JWT refresh token
    */
   static generateRefreshToken(payload: Omit<TokenPayload, 'iat' | 'exp'>, secret: string, expiresIn: string = '7d'): string {
-    return jwt.sign(payload, secret, { expiresIn, algorithm: 'HS256' });
+    const opts: SignOptions = { expiresIn, algorithm: 'HS256' as Algorithm };
+    return jwt.sign(payload as object, secret as Secret, opts);
   }
 
   /**

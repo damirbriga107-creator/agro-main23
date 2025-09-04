@@ -150,7 +150,7 @@ export class HealthUtils {
       return { 
         name, 
         status: 'unhealthy', 
-        details: { error: error.message } 
+        details: { error: (error as Error).message } 
       };
     }
   }
@@ -183,7 +183,7 @@ export class HealthUtils {
       return {
         name,
         status: 'unhealthy',
-        details: { error: error.message }
+        details: { error: (error as Error).message }
       };
     }
   }
