@@ -69,7 +69,7 @@ export class AuthService {
    */
   async registerUser(userData: RegisterUserData): Promise<{ user: UserProfile; emailVerificationRequired: boolean }> {
     try {
-      const { email, password, firstName, lastName, role = UserRole.FARMER, farmName, phoneNumber } = userData;
+      const { email, password, firstName, lastName, role = 'FARMER', farmName, phoneNumber } = userData; // UserRole.FARMER
 
       // Validate email format
       if (!ValidationUtils.isValidEmail(email)) {
@@ -127,7 +127,7 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role as UserRole,
+        role: user.role as string, // UserRole type
         isEmailVerified: user.isEmailVerified,
         farmName: user.farmName,
         phoneNumber: user.phoneNumber,
@@ -189,7 +189,7 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role as UserRole,
+        role: user.role as string, // UserRole type
         isEmailVerified: user.isEmailVerified,
         farmName: user.farmName,
         phoneNumber: user.phoneNumber,
@@ -212,7 +212,7 @@ export class AuthService {
   /**
    * Generate access and refresh tokens
    */
-  private async generateTokens(userId: string, email: string, role: UserRole): Promise<AuthTokens> {
+  private async generateTokens(userId: string, email: string, role: string): Promise<AuthTokens> { // role: UserRole
     const tokenPayload = { userId, email, role };
     
     const accessToken = TokenUtils.generateAccessToken(tokenPayload, this.jwtSecret, '15m');
@@ -465,7 +465,7 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role as UserRole,
+        role: user.role as string, // UserRole type
         isEmailVerified: user.isEmailVerified,
         farmName: user.farmName,
         phoneNumber: user.phoneNumber,
@@ -498,7 +498,7 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role as UserRole,
+        role: user.role as string, // UserRole type
         isEmailVerified: user.isEmailVerified,
         farmName: user.farmName,
         phoneNumber: user.phoneNumber,
