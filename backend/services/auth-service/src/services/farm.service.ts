@@ -1,11 +1,11 @@
 import { PrismaService } from './prisma.service';
-import { Farm, FarmMember, FarmType, FarmMemberRole, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 interface CreateFarmData {
   name: string;
   description?: string;
   totalAcres: number;
-  farmType: FarmType;
+  farmType: string; // FarmType enum
   address: string;
   city: string;
   state: string;
@@ -20,7 +20,7 @@ interface UpdateFarmData {
   name?: string;
   description?: string;
   totalAcres?: number;
-  farmType?: FarmType;
+  farmType?: string; // FarmType enum
   address?: string;
   city?: string;
   state?: string;
@@ -48,7 +48,7 @@ export class FarmService {
     const { page, limit, search } = options;
     const skip = (page - 1) * limit;
 
-    const whereClause: Prisma.FarmWhereInput = {
+    const whereClause: any = { // FarmWhereInput type not available
       members: {
         some: {
           userId: userId,
@@ -216,7 +216,7 @@ export class FarmService {
         members: {
           create: {
             userId: ownerId,
-            role: FarmMemberRole.OWNER
+            role: 'OWNER' // FarmMemberRole.OWNER
           }
         }
       },
@@ -250,7 +250,7 @@ export class FarmService {
         userId,
         leftAt: null,
         role: {
-          in: [FarmMemberRole.OWNER, FarmMemberRole.MANAGER]
+          in: ['OWNER', 'MANAGER'] // FarmMemberRole enum values
         }
       }
     });
@@ -306,7 +306,7 @@ export class FarmService {
         farmId,
         userId,
         leftAt: null,
-        role: FarmMemberRole.OWNER
+        role: 'OWNER' // FarmMemberRole.OWNER
       }
     });
 
@@ -368,7 +368,7 @@ export class FarmService {
   /**
    * Add a new member to farm
    */
-  async addFarmMember(farmId: string, memberEmail: string, role: FarmMemberRole, inviterId: string) {
+  async addFarmMember(farmId: string, memberEmail: string, role: string, inviterId: string) { // role: FarmMemberRole
     // Check if inviter has permission (OWNER or MANAGER)
     const inviterMember = await this.prisma.client.farmMember.findFirst({
       where: {
@@ -376,7 +376,7 @@ export class FarmService {
         userId: inviterId,
         leftAt: null,
         role: {
-          in: [FarmMemberRole.OWNER, FarmMemberRole.MANAGER]
+          in: ['OWNER', 'MANAGER'] // FarmMemberRole enum values
         }
       }
     });
@@ -408,11 +408,11 @@ export class FarmService {
     }
 
     // Prevent adding multiple owners
-    if (role === FarmMemberRole.OWNER) {
+    if (role === 'OWNER') { // FarmMemberRole.OWNER
       const existingOwner = await this.prisma.client.farmMember.findFirst({
         where: {
           farmId,
-          role: FarmMemberRole.OWNER,
+          role: 'OWNER' // FarmMemberRole.OWNER,
           leftAt: null
         }
       });
@@ -447,14 +447,14 @@ export class FarmService {
   /**
    * Update farm member role
    */
-  async updateFarmMember(farmId: string, memberId: string, newRole: FarmMemberRole, updaterId: string) {
+  async updateFarmMember(farmId: string, memberId: string, newRole: string, updaterId: string) { // newRole: FarmMemberRole
     // Check if updater has permission (OWNER)
     const updaterMember = await this.prisma.client.farmMember.findFirst({
       where: {
         farmId,
         userId: updaterId,
         leftAt: null,
-        role: FarmMemberRole.OWNER
+        role: 'OWNER' // FarmMemberRole.OWNER
       }
     });
 
@@ -482,11 +482,11 @@ export class FarmService {
     }
 
     // Prevent owner from demoting themselves if they're the only owner
-    if (memberToUpdate.userId === updaterId && memberToUpdate.role === FarmMemberRole.OWNER && newRole !== FarmMemberRole.OWNER) {
+    if (memberToUpdate.userId === updaterId && memberToUpdate.role === 'OWNER' && newRole !== 'OWNER') { // FarmMemberRole.OWNER
       const ownerCount = await this.prisma.client.farmMember.count({
         where: {
           farmId,
-          role: FarmMemberRole.OWNER,
+          role: 'OWNER' // FarmMemberRole.OWNER,
           leftAt: null
         }
       });
@@ -548,11 +548,11 @@ export class FarmService {
     }
 
     // Prevent removing the last owner
-    if (memberToRemove.role === FarmMemberRole.OWNER) {
+    if (memberToRemove.role === 'OWNER') { // FarmMemberRole.OWNER
       const ownerCount = await this.prisma.client.farmMember.count({
         where: {
           farmId,
-          role: FarmMemberRole.OWNER,
+          role: 'OWNER' // FarmMemberRole.OWNER,
           leftAt: null
         }
       });

@@ -19,7 +19,7 @@ export class AuthMiddleware {
   /**
    * Verify JWT token and extract user information
    */
-  public static authenticate(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
+  public static authenticate(req: AuthenticatedRequest, res: Response, next: NextFunction): void | Response {
     try {
       const authHeader = req.headers.authorization;
       
@@ -29,7 +29,7 @@ export class AuthMiddleware {
             code: 'MISSING_TOKEN',
             message: 'Authorization token is required',
             timestamp: new Date().toISOString(),
-            requestId: req.headers['x-request-id'],
+            requestId: req.headers['x-request-id'] as string,
           },
         });
       }
@@ -44,7 +44,7 @@ export class AuthMiddleware {
             code: 'SERVER_CONFIGURATION_ERROR',
             message: 'Authentication configuration error',
             timestamp: new Date().toISOString(),
-            requestId: req.headers['x-request-id'],
+            requestId: req.headers['x-request-id'] as string,
           },
         });
       }
@@ -56,7 +56,7 @@ export class AuthMiddleware {
       } catch (tokenError) {
         AuthMiddleware.logger.warn('Token verification failed', {
           error: tokenError.message,
-          requestId: req.headers['x-request-id'],
+          requestId: req.headers['x-request-id'] as string,
           ip: req.ip,
         });
 
@@ -65,7 +65,7 @@ export class AuthMiddleware {
             code: 'INVALID_TOKEN',
             message: 'Invalid or expired token',
             timestamp: new Date().toISOString(),
-            requestId: req.headers['x-request-id'],
+            requestId: req.headers['x-request-id'] as string,
           },
         });
       }
@@ -76,7 +76,7 @@ export class AuthMiddleware {
           code: 'AUTHENTICATION_ERROR',
           message: 'Authentication processing error',
           timestamp: new Date().toISOString(),
-          requestId: req.headers['x-request-id'],
+          requestId: req.headers['x-request-id'] as string,
         },
       });
     }
@@ -86,14 +86,14 @@ export class AuthMiddleware {
    * Check if user has required role
    */
   public static requireRole(roles: UserRole | UserRole[]) {
-    return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+    return (req: AuthenticatedRequest, res: Response, next: NextFunction): void | Response => {
       if (!req.user) {
         return res.status(401).json({
           error: {
             code: 'UNAUTHORIZED',
             message: 'Authentication required',
             timestamp: new Date().toISOString(),
-            requestId: req.headers['x-request-id'],
+            requestId: req.headers['x-request-id'] as string,
           },
         });
       }
@@ -106,7 +106,7 @@ export class AuthMiddleware {
           userId: req.user.userId,
           userRole: userRole,
           requiredRoles: requiredRoles,
-          requestId: req.headers['x-request-id'],
+          requestId: req.headers['x-request-id'] as string,
         });
 
         return res.status(403).json({
@@ -114,7 +114,7 @@ export class AuthMiddleware {
             code: 'INSUFFICIENT_ROLE',
             message: 'Access denied: insufficient permissions',
             timestamp: new Date().toISOString(),
-            requestId: req.headers['x-request-id'],
+            requestId: req.headers['x-request-id'] as string,
           },
         });
       }
@@ -165,7 +165,7 @@ export class AuthMiddleware {
       return next();
     }
 
-    return res.status(403).json({
+    res.status(403).json({
       error: {
         code: 'ACCESS_DENIED',
         message: 'Access denied: can only access own profile',

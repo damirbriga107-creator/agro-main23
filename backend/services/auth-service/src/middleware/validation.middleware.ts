@@ -3,6 +3,18 @@ import Joi from 'joi';
 import { ValidationError } from './error-handler.middleware';
 import { Logger } from '../utils/logger';
 
+// Extend Request interface for file uploads
+interface RequestWithFile extends Request {
+  file?: {
+    fieldname: string;
+    originalname: string;
+    encoding: string;
+    mimetype: string;
+    size: number;
+    buffer: Buffer;
+  };
+}
+
 export interface ValidationSchema {
   body?: Joi.ObjectSchema;
   query?: Joi.ObjectSchema;
@@ -89,7 +101,7 @@ export class ValidationMiddleware {
           );
 
           ValidationMiddleware.logger.warn('Validation failed', {
-            requestId: req.headers['x-request-id'],
+            requestId: req.headers['x-request-id'] as string,
             errors: validationError.details,
             path: req.originalUrl,
             method: req.method
@@ -521,7 +533,7 @@ export class ValidationMiddleware {
     allowedMimeTypes?: string[];
     required?: boolean;
   } = {}) => {
-    return (req: Request, res: Response, next: NextFunction): void => {
+    return (req: RequestWithFile, res: Response, next: NextFunction): void => {
       const {
         maxSize = 10 * 1024 * 1024, // 10MB default
         allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'],
@@ -547,7 +559,7 @@ export class ValidationMiddleware {
           filename: req.file.originalname,
           size: req.file.size,
           mimetype: req.file.mimetype,
-          requestId: req.headers['x-request-id']
+          requestId: req.headers['x-request-id'] as string
         });
       }
 
@@ -570,7 +582,7 @@ export class ValidationMiddleware {
         ip: req.ip,
         path: req.originalUrl,
         method: req.method,
-        requestId: req.headers['x-request-id']
+        requestId: req.headers['x-request-id'] as string
       });
     }
 
@@ -596,7 +608,7 @@ export class ValidationMiddleware {
 
       ValidationMiddleware.logger.debug(`UUID parameter validated: ${paramName}`, {
         value: paramValue,
-        requestId: req.headers['x-request-id']
+        requestId: req.headers['x-request-id'] as string
       });
 
       next();

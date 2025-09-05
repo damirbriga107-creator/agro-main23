@@ -46,7 +46,7 @@ export class Logger {
         };
 
         if (stack) {
-          logEntry.stack = stack;
+          (logEntry as any).stack = stack;
         }
 
         return JSON.stringify(logEntry);

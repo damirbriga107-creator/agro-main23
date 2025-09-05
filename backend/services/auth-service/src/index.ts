@@ -256,7 +256,7 @@ class AuthService {
     });
     
     process.on('unhandledRejection', (reason, promise) => {
-      this.logger.error('Unhandled rejection at:', promise, 'reason:', reason);
+      this.logger.error('Unhandled rejection', { promise: promise.toString(), reason });
       process.exit(1);
     });
   }

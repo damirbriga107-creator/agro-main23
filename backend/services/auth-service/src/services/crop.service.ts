@@ -1,5 +1,5 @@
 import { PrismaService } from './prisma.service';
-import { Crop, CropStatus, FarmMemberRole, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 interface CreateCropData {
   name: string;
@@ -19,7 +19,7 @@ interface UpdateCropData {
   plantingDate?: Date;
   expectedHarvestDate?: Date;
   actualHarvestDate?: Date;
-  status?: CropStatus;
+  status?: string; // CropStatus enum
   seasonYear?: number;
   expectedYield?: number;
   actualYield?: number;
@@ -53,13 +53,13 @@ export class CropService {
     const { page, limit, status, seasonYear } = options;
     const skip = (page - 1) * limit;
 
-    const whereClause: Prisma.CropWhereInput = {
+    const whereClause: any = { // CropWhereInput type not available
       farmId
     };
 
     // Add status filter
     if (status) {
-      whereClause.status = status as CropStatus;
+      whereClause.status = status; // CropStatus enum
     }
 
     // Add season year filter
@@ -194,7 +194,7 @@ export class CropService {
         userId,
         leftAt: null,
         role: {
-          in: [FarmMemberRole.OWNER, FarmMemberRole.MANAGER, FarmMemberRole.MEMBER]
+          in: ['OWNER', 'MANAGER', 'MEMBER'] // FarmMemberRole enum values
         }
       }
     });
@@ -220,7 +220,7 @@ export class CropService {
       data: {
         ...cropData,
         farmId,
-        status: CropStatus.PLANNED
+        status: 'PLANNED' // CropStatus.PLANNED
       },
       include: {
         farm: {
@@ -250,7 +250,7 @@ export class CropService {
                 userId,
                 leftAt: null,
                 role: {
-                  in: [FarmMemberRole.OWNER, FarmMemberRole.MANAGER, FarmMemberRole.MEMBER]
+                  in: ['OWNER', 'MANAGER', 'MEMBER'] // FarmMemberRole enum values
                 }
               }
             }
@@ -313,7 +313,7 @@ export class CropService {
                 userId,
                 leftAt: null,
                 role: {
-                  in: [FarmMemberRole.OWNER, FarmMemberRole.MANAGER]
+                  in: ['OWNER', 'MANAGER'] // FarmMemberRole enum values
                 }
               }
             }
@@ -393,7 +393,7 @@ export class CropService {
     const farmAccess = await this.checkFarmAccess(farmId, userId);
     if (!farmAccess) return null;
 
-    const whereClause: Prisma.CropWhereInput = { farmId };
+    const whereClause: any = { farmId }; // CropWhereInput type not available
     if (seasonYear) {
       whereClause.seasonYear = seasonYear;
     }
@@ -420,7 +420,7 @@ export class CropService {
     const statusCounts = crops.reduce((acc, crop) => {
       acc[crop.status] = (acc[crop.status] || 0) + 1;
       return acc;
-    }, {} as Record<CropStatus, number>);
+    }, {} as Record<string, number>); // CropStatus enum
 
     // Calculate financial summary for all crops
     let totalRevenue = 0;
@@ -470,7 +470,7 @@ export class CropService {
                 userId,
                 leftAt: null,
                 role: {
-                  in: [FarmMemberRole.OWNER, FarmMemberRole.MANAGER, FarmMemberRole.MEMBER]
+                  in: ['OWNER', 'MANAGER', 'MEMBER'] // FarmMemberRole enum values
                 }
               }
             }
@@ -489,7 +489,7 @@ export class CropService {
         actualYield: harvestData.actualYield,
         actualHarvestDate: harvestData.actualHarvestDate,
         yieldUnit: harvestData.yieldUnit || crop.yieldUnit,
-        status: CropStatus.HARVESTED
+        status: 'HARVESTED' // CropStatus.HARVESTED
       },
       include: {
         farm: {

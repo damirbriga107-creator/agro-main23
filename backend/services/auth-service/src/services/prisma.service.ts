@@ -133,7 +133,7 @@ export class PrismaService {
     options?: {
       maxWait?: number;
       timeout?: number;
-      isolationLevel?: Prisma.TransactionIsolationLevel;
+      isolationLevel?: any; // TransactionIsolationLevel type not available
     }
   ): Promise<T> {
     try {
@@ -187,20 +187,17 @@ export class PrismaService {
       }
     }
 
-    if (error instanceof Prisma.PrismaClientUnknownRequestError) {
-      return new Error('Unknown database error occurred');
-    }
-
-    if (error instanceof Prisma.PrismaClientRustPanicError) {
-      return new Error('Database engine crashed');
-    }
-
-    if (error instanceof Prisma.PrismaClientInitializationError) {
+    // Handle other Prisma errors by checking error types
+    if (error?.message?.includes('initialization')) {
       return new Error('Failed to initialize database connection');
     }
 
-    if (error instanceof Prisma.PrismaClientValidationError) {
+    if (error?.message?.includes('validation')) {
       return new Error(`Validation error: ${error.message}`);
+    }
+
+    if (error?.message?.includes('engine') || error?.message?.includes('panic')) {
+      return new Error('Database engine error');
     }
 
     return error;

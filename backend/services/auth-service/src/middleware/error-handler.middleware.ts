@@ -246,7 +246,7 @@ export class ErrorHandlerMiddleware {
         code,
         message,
         timestamp: new Date().toISOString(),
-        requestId: req.headers['x-request-id'],
+        requestId: req.headers['x-request-id'] as string,
         path: req.originalUrl,
         method: req.method
       }
@@ -270,7 +270,7 @@ export class ErrorHandlerMiddleware {
    */
   private static logError(error: AppError, req: Request): void {
     const logContext = {
-      requestId: req.headers['x-request-id'],
+      requestId: req.headers['x-request-id'] as string,
       method: req.method,
       url: req.originalUrl,
       userAgent: req.get('User-Agent'),
@@ -307,7 +307,7 @@ export class ErrorHandlerMiddleware {
         code: error.code,
         message: error.message,
         timestamp: new Date().toISOString(),
-        requestId: req.headers['x-request-id'],
+        requestId: req.headers['x-request-id'] as string,
         path: req.originalUrl,
         method: req.method
       }

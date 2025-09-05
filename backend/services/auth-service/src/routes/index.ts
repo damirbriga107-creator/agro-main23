@@ -21,7 +21,7 @@ export interface ServiceDependencies {
 /**
  * Setup all routes for the authentication service
  */
-export function setupRoutes(app: Express, dependencies: ServiceDependencies): void {
+export function setupRoutes(app: Application, dependencies: ServiceDependencies): void {
   const { logger } = dependencies;
 
   try {
