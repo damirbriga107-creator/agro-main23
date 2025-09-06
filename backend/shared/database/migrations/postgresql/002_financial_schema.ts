@@ -186,7 +186,7 @@ export const migration: Migration = {
         CREATE INDEX idx_budget_categories_priority ON budget_categories(priority);
       `);
 
-      -- Financial reports table
+      // Financial reports table
       await pool.query(`
         CREATE TABLE financial_reports (
           id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -217,7 +217,7 @@ export const migration: Migration = {
         CREATE INDEX idx_financial_reports_dates ON financial_reports(start_date, end_date);
       `);
 
-      -- Financial summaries table
+      // Financial summaries table
       await pool.query(`
         CREATE TABLE financial_summaries (
           id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -248,7 +248,7 @@ export const migration: Migration = {
         CREATE INDEX idx_financial_summaries_profit ON financial_summaries(net_profit);
       `);
 
-      -- Cash flow entries table
+      // Cash flow entries table
       await pool.query(`
         CREATE TABLE cash_flow_entries (
           id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -273,7 +273,7 @@ export const migration: Migration = {
         CREATE INDEX idx_cash_flow_entries_transaction_id ON cash_flow_entries(transaction_id);
       `);
 
-      -- Recurring transactions table
+      // Recurring transactions table
       await pool.query(`
         CREATE TABLE recurring_transactions (
           id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
