@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ErrorUtils } from '@daorsagro/utils';
 import { EnvironmentUtils } from '@daorsagro/config';
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils/logger.js';
 
 const logger = new Logger('error-handler');
 
