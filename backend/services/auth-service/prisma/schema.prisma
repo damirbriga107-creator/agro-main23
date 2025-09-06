@@ -8,7 +8,7 @@ datasource db {
 }
 
 // User and Authentication Models
-model User @map("users") {
+model User {
   id              String    @id @default(cuid())
   email           String    @unique
   firstName       String
@@ -52,7 +52,7 @@ enum UserRole {
   SUPPORT
 }
 
-model RefreshToken @map("refresh_tokens") {
+model RefreshToken  {
   id        String    @id @default(cuid())
   token     String    @unique
   userId    String
@@ -63,7 +63,7 @@ model RefreshToken @map("refresh_tokens") {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model PasswordReset @map("password_resets") {
+model PasswordReset  {
   id        String    @id @default(cuid())
   email     String
   token     String    @unique
@@ -72,7 +72,7 @@ model PasswordReset @map("password_resets") {
   usedAt    DateTime?
 }
 
-model EmailVerification @map("email_verifications") {
+model EmailVerification  {
   id        String    @id @default(cuid())
   userId    String
   token     String    @unique
@@ -84,7 +84,7 @@ model EmailVerification @map("email_verifications") {
 }
 
 // Farm Models
-model Farm @map("farms") {
+model Farm  {
   id           String     @id @default(cuid())
   name         String
   description  String?
@@ -122,7 +122,7 @@ enum FarmType {
   AQUACULTURE
 }
 
-model FarmMember @map("farm_members") {
+model FarmMember  {
   id       String           @id @default(cuid())
   farmId   String
   userId   String
@@ -143,7 +143,7 @@ enum FarmMemberRole {
   VIEWER
 }
 
-model Crop @map("crops") {
+model Crop  {
   id                  String    @id @default(cuid())
   farmId              String
   name                String
@@ -175,7 +175,7 @@ enum CropStatus {
 }
 
 // Financial Models
-model TransactionCategory @map("transaction_categories") {
+model TransactionCategory  {
   id           String          @id @default(cuid())
   name         String
   description  String?
@@ -187,8 +187,8 @@ model TransactionCategory @map("transaction_categories") {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
-  parent       TransactionCategory? @relation(\"CategoryHierarchy\", fields: [parentId], references: [id])
-  children     TransactionCategory[] @relation(\"CategoryHierarchy\")
+  parent       TransactionCategory? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children     TransactionCategory[] @relation("CategoryHierarchy")
   transactions Transaction[]
   budgetCategories BudgetCategory[]
 }
@@ -198,7 +198,7 @@ enum TransactionType {
   EXPENSE
 }
 
-model Transaction @map("transactions") {
+model Transaction  {
   id              String          @id @default(cuid())
   farmId          String
   categoryId      String
@@ -241,7 +241,7 @@ enum PaymentMethod {
   DIGITAL_PAYMENT
 }
 
-model Budget @map("budgets") {
+model Budget  {
   id           String       @id @default(cuid())
   farmId       String
   userId       String
@@ -267,7 +267,7 @@ enum BudgetStatus {
   CANCELLED
 }
 
-model BudgetCategory @map("budget_categories") {
+model BudgetCategory  {
   id              String  @id @default(cuid())
   budgetId        String
   categoryId      String
@@ -283,7 +283,7 @@ model BudgetCategory @map("budget_categories") {
 }
 
 // Analytics and Reporting Models
-model FinancialSummary @map("financial_summaries") {
+model FinancialSummary  {
   id            String   @id @default(cuid())
   farmId        String
   seasonYear    Int
@@ -297,7 +297,7 @@ model FinancialSummary @map("financial_summaries") {
   @unique([farmId, seasonYear])
 }
 
-model CropProfitability @map("crop_profitability") {
+model CropProfitability  {
   id              String  @id @default(cuid())
   farmId          String
   cropId          String
@@ -315,7 +315,7 @@ model CropProfitability @map("crop_profitability") {
 }
 
 // System Models
-model AuditLog @map("audit_logs") {
+model AuditLog  {
   id          String    @id @default(cuid())
   userId      String?
   action      String
@@ -332,7 +332,7 @@ model AuditLog @map("audit_logs") {
   @index([createdAt])
 }
 
-model SystemSettings @map("system_settings") {
+model SystemSettings  {
   id        String   @id @default(cuid())
   key       String   @unique
   value     Json
