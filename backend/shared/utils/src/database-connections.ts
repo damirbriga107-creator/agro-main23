@@ -3,6 +3,7 @@ import { ClickHouseClient, createClient } from '@clickhouse/client';
 import Redis from 'ioredis';
 import { Kafka, Producer, Consumer } from 'kafkajs';
 import { Client as ElasticsearchClient } from '@elastic/elasticsearch';
+import { PrismaClient } from '@prisma/client/default';
 
 import { ConfigManager } from '@daorsagro/config';
 import { Logger } from './logger';
