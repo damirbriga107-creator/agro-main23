@@ -412,7 +412,7 @@ export class FarmService {
       const existingOwner = await this.prisma.client.farmMember.findFirst({
         where: {
           farmId,
-          role: 'OWNER' // FarmMemberRole.OWNER,
+          role: 'OWNER', // FarmMemberRole.OWNER
           leftAt: null
         }
       });
@@ -486,7 +486,7 @@ export class FarmService {
       const ownerCount = await this.prisma.client.farmMember.count({
         where: {
           farmId,
-          role: 'OWNER' // FarmMemberRole.OWNER,
+          role: 'OWNER', // FarmMemberRole.OWNER
           leftAt: null
         }
       });
@@ -552,7 +552,7 @@ export class FarmService {
       const ownerCount = await this.prisma.client.farmMember.count({
         where: {
           farmId,
-          role: 'OWNER' // FarmMemberRole.OWNER,
+          role: 'OWNER', // FarmMemberRole.OWNER
           leftAt: null
         }
       });
