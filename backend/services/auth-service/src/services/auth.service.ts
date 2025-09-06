@@ -394,7 +394,7 @@ export class AuthService {
       });
 
       // Invalidate all existing refresh tokens
-      await this.redis.delete(`refresh_token:${user.id}`);
+      await this.redis.del(`refresh_token:${user.id}`);
 
       this.logger.info('Password reset successfully', { userId: user.id });
     } catch (error) {
@@ -438,7 +438,7 @@ export class AuthService {
       });
 
       // Invalidate all existing refresh tokens
-      await this.redis.delete(`refresh_token:${userId}`);
+      await this.redis.del(`refresh_token:${userId}`);
 
       this.logger.info('Password changed successfully', { userId });
     } catch (error) {

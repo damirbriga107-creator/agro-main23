@@ -43,11 +43,11 @@ export class PasswordUtils {
 // Token utilities
 export class TokenUtils {
   static generateAccessToken(payload: Omit<TokenPayload, 'iat' | 'exp'>, secret: string, expiresIn: string = '15m'): string {
-    return jwt.sign(payload, secret, { expiresIn, algorithm: 'HS256' });
+    return jwt.sign(payload as object, secret, { expiresIn } as any);
   }
 
   static generateRefreshToken(payload: Omit<TokenPayload, 'iat' | 'exp'>, secret: string, expiresIn: string = '7d'): string {
-    return jwt.sign(payload, secret, { expiresIn, algorithm: 'HS256' });
+    return jwt.sign(payload as object, secret, { expiresIn } as any);
   }
 
   static verifyToken(token: string, secret: string): TokenPayload {

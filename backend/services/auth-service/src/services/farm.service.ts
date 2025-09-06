@@ -1,5 +1,11 @@
 import { PrismaService } from './prisma.service';
-import { FarmMemberRole } from '@prisma/client';
+// Define FarmMemberRole locally until Prisma generates types
+enum FarmMemberRole {
+  OWNER = 'OWNER',
+  MANAGER = 'MANAGER', 
+  MEMBER = 'MEMBER',
+  VIEWER = 'VIEWER'
+}
 
 interface CreateFarmData {
   name: string;

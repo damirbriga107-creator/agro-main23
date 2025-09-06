@@ -8,7 +8,7 @@ import { ServiceDependencies } from './index';
 /**
  * Setup authentication routes
  */
-export function setupAuthRoutes(app: Express, dependencies: ServiceDependencies, basePath: string): void {
+export function setupAuthRoutes(app: Application, dependencies: ServiceDependencies, basePath: string): void {
   const router = Router();
   const { logger, prisma, redis, emailService, config } = dependencies;
   
