@@ -349,7 +349,7 @@ export const migration: Migration = {
         CREATE INDEX idx_market_prices_source ON market_prices(source);
       `);
 
-      -- Financial goals table
+      // Financial goals table
       await pool.query(`
         CREATE TABLE financial_goals (
           id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -386,7 +386,7 @@ export const migration: Migration = {
         CREATE INDEX idx_financial_goals_category_id ON financial_goals(category_id);
       `);
 
-      -- Crop profitability table
+      // Crop profitability table
       await pool.query(`
         CREATE TABLE crop_profitability (
           id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -420,7 +420,7 @@ export const migration: Migration = {
         CREATE INDEX idx_crop_profitability_roi ON crop_profitability(roi_percentage);
       `);
 
-      -- Add updated_at triggers
+      // Add updated_at triggers
       const tablesWithUpdatedAt = [
         'categories', 'transactions', 'budgets', 'budget_categories',
         'financial_summaries', 'recurring_transactions', 'financial_goals'
