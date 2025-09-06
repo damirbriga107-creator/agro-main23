@@ -20,17 +20,9 @@ export class PostgresConnection {
   private constructor() {
     this.logger = new Logger('PostgresConnection');
     this.client = new PrismaClient({
-      log: [
-        { level: 'query', emit: 'event' },
-        { level: 'error', emit: 'event' },
-        { level: 'info', emit: 'event' },
-        { level: 'warn', emit: 'event' },
-      ],
+      log: ['query', 'error', 'info', 'warn'],
       errorFormat: 'pretty',
     });
-
-    // Setup event listeners
-    this.setupEventListeners();
   }
 
   public static getInstance(): PostgresConnection {
@@ -40,28 +32,6 @@ export class PostgresConnection {
     return PostgresConnection.instance;
   }
 
-  private setupEventListeners(): void {
-    this.client.$on('query', (e: any) => {
-      this.logger.debug('Query executed', {
-        query: e.query,
-        params: e.params,
-        duration: e.duration,
-        target: e.target,
-      });
-    });
-
-    this.client.$on('error', (e: any) => {
-      this.logger.error('Prisma error', e);
-    });
-
-    this.client.$on('info', (e: any) => {
-      this.logger.info('Prisma info', e);
-    });
-
-    this.client.$on('warn', (e: any) => {
-      this.logger.warn('Prisma warning', e);
-    });
-  }
 
   public async connect(): Promise<void> {
     try {
