@@ -9,23 +9,25 @@ datasource db {
 
 // Transaction Category Model
 model Category {
-  id           String          @id @default(cuid())
-  name         String
-  description  String?
-  type         TransactionType
-  parentId     String?
-  isActive     Boolean         @default(true)
-  color        String?
-  icon         String?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  type        TransactionType
+  parentId    String?
+  isActive    Boolean         @default(true)
+  color       String?
+  icon        String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
-  parent           Category?         @relation(\"CategoryHierarchy\", fields: [parentId], references: [id])
-  children         Category[]        @relation(\"CategoryHierarchy\")
-  transactions     Transaction[]
-  budgetCategories BudgetCategory[]
+  parent               Category?              @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children             Category[]             @relation("CategoryHierarchy")
+  transactions         Transaction[]
+  budgetCategories     BudgetCategory[]
+  CashFlowEntry        CashFlowEntry[]
+  RecurringTransaction RecurringTransaction[]
 
-  @@map(\"categories\")
+  @@map("categories")
 }
 
 enum TransactionType {
@@ -56,7 +58,7 @@ model Transaction {
   @@index([categoryId])
   @@index([transactionDate])
   @@index([transactionType])
-  @@map(\"transactions\")
+  @@map("transactions")
 }
 
 enum PaymentMethod {
@@ -70,23 +72,23 @@ enum PaymentMethod {
 
 // Budget Model
 model Budget {
-  id           String       @id @default(cuid())
-  farmId       String
-  name         String
-  description  String?
-  startDate    DateTime
-  endDate      DateTime
-  totalBudget  Decimal      @db.Decimal(12, 2)
-  status       BudgetStatus @default(ACTIVE)
-  userId       String
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id          String       @id @default(cuid())
+  farmId      String
+  name        String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  totalBudget Decimal      @db.Decimal(12, 2)
+  status      BudgetStatus @default(ACTIVE)
+  userId      String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   categories BudgetCategory[]
 
   @@index([farmId])
   @@index([status])
-  @@map(\"budgets\")
+  @@map("budgets")
 }
 
 enum BudgetStatus {
@@ -96,10 +98,10 @@ enum BudgetStatus {
 }
 
 model BudgetCategory {
-  id              String  @id @default(cuid())
+  id              String   @id @default(cuid())
   budgetId        String
   categoryId      String
-  allocatedAmount Decimal @db.Decimal(12, 2)
+  allocatedAmount Decimal  @db.Decimal(12, 2)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -107,24 +109,24 @@ model BudgetCategory {
   category Category @relation(fields: [categoryId], references: [id])
 
   @@unique([budgetId, categoryId])
-  @@map(\"budget_categories\")
+  @@map("budget_categories")
 }
 
 // Financial Analytics Models
 model FinancialReport {
-  id           String      @id @default(cuid())
-  farmId       String
-  reportType   ReportType
-  startDate    DateTime
-  endDate      DateTime
-  data         Json
-  generatedBy  String
-  generatedAt  DateTime    @default(now())
-  createdAt    DateTime    @default(now())
+  id          String     @id @default(cuid())
+  farmId      String
+  reportType  ReportType
+  startDate   DateTime
+  endDate     DateTime
+  data        Json
+  generatedBy String
+  generatedAt DateTime   @default(now())
+  createdAt   DateTime   @default(now())
 
   @@index([farmId, reportType])
   @@index([generatedAt])
-  @@map(\"financial_reports\")
+  @@map("financial_reports")
 }
 
 enum ReportType {
@@ -135,20 +137,20 @@ enum ReportType {
 }
 
 model FinancialSummary {
-  id            String   @id @default(cuid())
+  id            String     @id @default(cuid())
   farmId        String
-  period        String   // YYYY-MM or YYYY-Q1, etc.
+  period        String // YYYY-MM or YYYY-Q1, etc.
   periodType    PeriodType
-  totalIncome   Decimal  @db.Decimal(12, 2)
-  totalExpenses Decimal  @db.Decimal(12, 2)
-  netProfit     Decimal  @db.Decimal(12, 2)
-  profitMargin  Decimal  @db.Decimal(5, 2)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  totalIncome   Decimal    @db.Decimal(12, 2)
+  totalExpenses Decimal    @db.Decimal(12, 2)
+  netProfit     Decimal    @db.Decimal(12, 2)
+  profitMargin  Decimal    @db.Decimal(5, 2)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
   @@unique([farmId, period, periodType])
   @@index([farmId, periodType])
-  @@map(\"financial_summaries\")
+  @@map("financial_summaries")
 }
 
 enum PeriodType {
@@ -174,7 +176,7 @@ model CashFlowEntry {
   category Category? @relation(fields: [categoryId], references: [id])
 
   @@index([farmId, date])
-  @@map(\"cash_flow_entries\")
+  @@map("cash_flow_entries")
 }
 
 // Recurring Transaction Templates
@@ -187,8 +189,8 @@ model RecurringTransaction {
   amount          Decimal             @db.Decimal(12, 2)
   transactionType TransactionType
   frequency       RecurrencyFrequency
-  dayOfMonth      Int?                // For monthly/yearly
-  dayOfWeek       Int?                // For weekly (0=Sunday)
+  dayOfMonth      Int? // For monthly/yearly
+  dayOfWeek       Int? // For weekly (0=Sunday)
   startDate       DateTime
   endDate         DateTime?
   isActive        Boolean             @default(true)
@@ -202,7 +204,7 @@ model RecurringTransaction {
 
   @@index([farmId, isActive])
   @@index([nextExecution])
-  @@map(\"recurring_transactions\")
+  @@map("recurring_transactions")
 }
 
 enum RecurrencyFrequency {
@@ -215,38 +217,38 @@ enum RecurrencyFrequency {
 
 // Market Data for Reference
 model MarketPrice {
-  id         String   @id @default(cuid())
-  commodity  String
-  market     String
-  price      Decimal  @db.Decimal(10, 4)
-  unit       String
-  currency   String   @default(\"USD\")
-  date       DateTime
-  source     String
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  commodity String
+  market    String
+  price     Decimal  @db.Decimal(10, 4)
+  unit      String
+  currency  String   @default("USD")
+  date      DateTime
+  source    String
+  createdAt DateTime @default(now())
 
   @@unique([commodity, market, date])
   @@index([commodity, date])
-  @@map(\"market_prices\")
+  @@map("market_prices")
 }
 
 // Financial Goals and Targets
 model FinancialGoal {
-  id          String     @id @default(cuid())
-  farmId      String
-  name        String
-  description String?
-  goalType    GoalType
-  targetAmount Decimal   @db.Decimal(12, 2)
-  currentAmount Decimal  @db.Decimal(12, 2) @default(0)
-  targetDate  DateTime
-  isActive    Boolean    @default(true)
-  userId      String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id            String   @id @default(cuid())
+  farmId        String
+  name          String
+  description   String?
+  goalType      GoalType
+  targetAmount  Decimal  @db.Decimal(12, 2)
+  currentAmount Decimal  @default(0) @db.Decimal(12, 2)
+  targetDate    DateTime
+  isActive      Boolean  @default(true)
+  userId        String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@index([farmId, isActive])
-  @@map(\"financial_goals\")
+  @@map("financial_goals")
 }
 
 enum GoalType {
@@ -255,4 +257,4 @@ enum GoalType {
   SAVINGS
   EXPENSE_REDUCTION
   INVESTMENT
-}"
+}
