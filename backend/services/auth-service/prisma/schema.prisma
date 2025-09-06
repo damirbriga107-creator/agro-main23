@@ -70,6 +70,8 @@ model PasswordReset  {
   expiresAt DateTime
   createdAt DateTime  @default(now())
   usedAt    DateTime?
+
+  user User @relation(fields: [email], references: [email])
 }
 
 model EmailVerification  {
@@ -133,7 +135,7 @@ model FarmMember  {
   farm Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @unique([farmId, userId])
+  @@unique([farmId, userId])
 }
 
 enum FarmMemberRole {
@@ -279,7 +281,7 @@ model BudgetCategory  {
   budget   Budget              @relation(fields: [budgetId], references: [id], onDelete: Cascade)
   category TransactionCategory @relation(fields: [categoryId], references: [id])
 
-  @unique([budgetId, categoryId])
+  @@unique([budgetId, categoryId])
 }
 
 // Analytics and Reporting Models
@@ -294,7 +296,7 @@ model FinancialSummary  {
   calculatedAt  DateTime @default(now())
   createdAt     DateTime @default(now())
 
-  @unique([farmId, seasonYear])
+  @@unique([farmId, seasonYear])
 }
 
 model CropProfitability  {
@@ -311,7 +313,7 @@ model CropProfitability  {
   calculatedAt    DateTime @default(now())
   createdAt       DateTime @default(now())
 
-  @unique([farmId, cropId, seasonYear])
+  @@unique([farmId, cropId, seasonYear])
 }
 
 // System Models
@@ -327,9 +329,9 @@ model AuditLog  {
   userAgent   String?
   createdAt   DateTime  @default(now())
 
-  @index([userId])
-  @index([entityType, entityId])
-  @index([createdAt])
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
 }
 
 model SystemSettings  {

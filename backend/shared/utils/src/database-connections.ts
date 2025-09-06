@@ -1,4 +1,3 @@
-import { PrismaClient } from '@prisma/client';
 import { MongoClient, Db } from 'mongodb';
 import { ClickHouseClient, createClient } from '@clickhouse/client';
 import Redis from 'ioredis';
