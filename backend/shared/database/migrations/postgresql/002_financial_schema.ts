@@ -316,7 +316,7 @@ export const migration: Migration = {
         CREATE INDEX idx_recurring_transactions_frequency ON recurring_transactions(frequency);
       `);
 
-      -- Market prices table
+      // Market prices table
       await pool.query(`
         CREATE TABLE market_prices (
           id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
