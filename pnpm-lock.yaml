@@ -20,6 +20,12 @@ importers:
       '@types/jsonwebtoken':
         specifier: ^9.0.10
         version: 9.0.10
+      compression:
+        specifier: ^1.7.4
+        version: 1.8.1
+      cors:
+        specifier: ^2.8.5
+        version: 2.8.5
       dotenv:
         specifier: ^16.3.1
         version: 16.6.1
@@ -47,6 +53,15 @@ importers:
       kafkajs:
         specifier: ^2.2.4
         version: 2.2.4
+      morgan:
+        specifier: ^1.10.0
+        version: 1.10.1
+      redis:
+        specifier: ^4.6.15
+        version: 4.7.1
+      uuid:
+        specifier: ^9.0.1
+        version: 9.0.1
       winston:
         specifier: ^3.17.0
         version: 3.17.0
@@ -96,6 +111,9 @@ importers:
       mongoose:
         specifier: ^8.18.0
         version: 8.18.0(socks@2.8.7)
+      nodemon:
+        specifier: ^3.1.0
+        version: 3.1.10
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
@@ -924,27 +942,45 @@ importers:
 
   backend/shared/utils:
     dependencies:
+      '@clickhouse/client':
+        specifier: ^1.4.0
+        version: 1.12.1
       '@daorsagro/types':
         specifier: workspace:*
         version: link:../types
+      '@elastic/elasticsearch':
+        specifier: ^8.15.0
+        version: 8.19.1
+      '@prisma/client':
+        specifier: ^5.22.0
+        version: 5.22.0(prisma@5.22.0)
       bcrypt:
         specifier: ^5.1.1
         version: 5.1.1
       crypto:
         specifier: ^1.0.1
         version: 1.0.1
+      ioredis:
+        specifier: ^5.4.1
+        version: 5.7.0
       joi:
         specifier: ^17.13.3
         version: 17.13.3
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
+      kafkajs:
+        specifier: ^2.2.4
+        version: 2.2.4
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
       moment:
         specifier: ^2.30.1
         version: 2.30.1
+      mongodb:
+        specifier: ^6.10.0
+        version: 6.19.0(socks@2.8.7)
       nanoid:
         specifier: ^5.1.5
         version: 5.1.5
@@ -1965,8 +2001,15 @@ packages:
   '@clickhouse/client-common@0.2.10':
     resolution: {integrity: sha512-BvTY0IXS96y9RUeNCpKL4HUzHmY80L0lDcGN0lmUD6zjOqYMn78+xyHYJ/AIAX7JQsc+/KwFt2soZutQTKxoGQ==}
 
+  '@clickhouse/client-common@1.12.1':
+    resolution: {integrity: sha512-ccw1N6hB4+MyaAHIaWBwGZ6O2GgMlO99FlMj0B0UEGfjxM9v5dYVYql6FpP19rMwrVAroYs/IgX2vyZEBvzQLg==}
+
   '@clickhouse/client@0.2.10':
     resolution: {integrity: sha512-ZwBgzjEAFN/ogS0ym5KHVbR7Hx/oYCX01qGp2baEyfN2HM73kf/7Vp3GvMHWRy+zUXISONEtFv7UTViOXnmFrg==}
+    engines: {node: '>=16'}
+
+  '@clickhouse/client@1.12.1':
+    resolution: {integrity: sha512-7ORY85rphRazqHzImNXMrh4vsaPrpetFoTWpZYueCO2bbO6PXYDXp/GQ4DgxnGIqbWB/Di1Ai+Xuwq2o7DJ36A==}
     engines: {node: '>=16'}
 
   '@colors/colors@1.6.0':
@@ -10617,9 +10660,15 @@ snapshots:
 
   '@clickhouse/client-common@0.2.10': {}
 
+  '@clickhouse/client-common@1.12.1': {}
+
   '@clickhouse/client@0.2.10':
     dependencies:
       '@clickhouse/client-common': 0.2.10
+
+  '@clickhouse/client@1.12.1':
+    dependencies:
+      '@clickhouse/client-common': 1.12.1
 
   '@colors/colors@1.6.0': {}
 
