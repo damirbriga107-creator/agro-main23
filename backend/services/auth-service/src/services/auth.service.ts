@@ -127,7 +127,7 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role as string, // UserRole type
+        role: user.role as UserRole,
         isEmailVerified: user.isEmailVerified,
         farmName: user.farmName,
         phoneNumber: user.phoneNumber,
@@ -189,7 +189,7 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role as string, // UserRole type
+        role: user.role as UserRole,
         isEmailVerified: user.isEmailVerified,
         farmName: user.farmName,
         phoneNumber: user.phoneNumber,
@@ -465,7 +465,7 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role as string, // UserRole type
+        role: user.role as UserRole,
         isEmailVerified: user.isEmailVerified,
         farmName: user.farmName,
         phoneNumber: user.phoneNumber,
@@ -498,7 +498,7 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role as string, // UserRole type
+        role: user.role as UserRole,
         isEmailVerified: user.isEmailVerified,
         farmName: user.farmName,
         phoneNumber: user.phoneNumber,
