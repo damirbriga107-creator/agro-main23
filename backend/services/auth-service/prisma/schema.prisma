@@ -8,7 +8,7 @@ datasource db {
 }
 
 // User and Authentication Models
-model User {
+model User @map("users") {
   id              String    @id @default(cuid())
   email           String    @unique
   firstName       String
@@ -43,8 +43,6 @@ model User {
   refreshTokens    RefreshToken[]
   passwordResets   PasswordReset[]
   emailVerifications EmailVerification[]
-
-  @@map(\"users\")
 }
 
 enum UserRole {
@@ -54,7 +52,7 @@ enum UserRole {
   SUPPORT
 }
 
-model RefreshToken {
+model RefreshToken @map("refresh_tokens") {
   id        String    @id @default(cuid())
   token     String    @unique
   userId    String
@@ -63,22 +61,18 @@ model RefreshToken {
   revokedAt DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map(\"refresh_tokens\")
 }
 
-model PasswordReset {
+model PasswordReset @map("password_resets") {
   id        String    @id @default(cuid())
   email     String
   token     String    @unique
   expiresAt DateTime
   createdAt DateTime  @default(now())
   usedAt    DateTime?
-
-  @@map(\"password_resets\")
 }
 
-model EmailVerification {
+model EmailVerification @map("email_verifications") {
   id        String    @id @default(cuid())
   userId    String
   token     String    @unique
@@ -87,12 +81,10 @@ model EmailVerification {
   verifiedAt DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map(\"email_verifications\")
 }
 
 // Farm Models
-model Farm {
+model Farm @map("farms") {
   id           String     @id @default(cuid())
   name         String
   description  String?
@@ -119,8 +111,6 @@ model Farm {
   crops        Crop[]
   transactions Transaction[]
   budgets      Budget[]
-
-  @@map(\"farms\")
 }
 
 enum FarmType {
@@ -132,7 +122,7 @@ enum FarmType {
   AQUACULTURE
 }
 
-model FarmMember {
+model FarmMember @map("farm_members") {
   id       String           @id @default(cuid())
   farmId   String
   userId   String
@@ -143,8 +133,7 @@ model FarmMember {
   farm Farm @relation(fields: [farmId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([farmId, userId])
-  @@map(\"farm_members\")
+  @unique([farmId, userId])
 }
 
 enum FarmMemberRole {
@@ -154,7 +143,7 @@ enum FarmMemberRole {
   VIEWER
 }
 
-model Crop {
+model Crop @map("crops") {
   id                  String    @id @default(cuid())
   farmId              String
   name                String
@@ -175,8 +164,6 @@ model Crop {
 
   farm         Farm          @relation(fields: [farmId], references: [id], onDelete: Cascade)
   transactions Transaction[]
-
-  @@map(\"crops\")
 }
 
 enum CropStatus {
@@ -188,7 +175,7 @@ enum CropStatus {
 }
 
 // Financial Models
-model TransactionCategory {
+model TransactionCategory @map("transaction_categories") {
   id           String          @id @default(cuid())
   name         String
   description  String?
@@ -204,8 +191,6 @@ model TransactionCategory {
   children     TransactionCategory[] @relation(\"CategoryHierarchy\")
   transactions Transaction[]
   budgetCategories BudgetCategory[]
-
-  @@map(\"transaction_categories\")
 }
 
 enum TransactionType {
@@ -213,7 +198,7 @@ enum TransactionType {
   EXPENSE
 }
 
-model Transaction {
+model Transaction @map("transactions") {
   id              String          @id @default(cuid())
   farmId          String
   categoryId      String
@@ -243,10 +228,9 @@ model Transaction {
   crop     Crop?               @relation(fields: [cropId], references: [id])
   user     User                @relation(fields: [userId], references: [id])
 
-  @@index([farmId, transactionDate])
-  @@index([categoryId])
-  @@index([transactionDate])
-  @@map(\"transactions\")
+  @index([farmId, transactionDate])
+  @index([categoryId])
+  @index([transactionDate])
 }
 
 enum PaymentMethod {
@@ -257,7 +241,7 @@ enum PaymentMethod {
   DIGITAL_PAYMENT
 }
 
-model Budget {
+model Budget @map("budgets") {
   id           String       @id @default(cuid())
   farmId       String
   userId       String
@@ -274,8 +258,6 @@ model Budget {
   farm       Farm             @relation(fields: [farmId], references: [id], onDelete: Cascade)
   user       User             @relation(fields: [userId], references: [id])
   categories BudgetCategory[]
-
-  @@map(\"budgets\")
 }
 
 enum BudgetStatus {
@@ -285,7 +267,7 @@ enum BudgetStatus {
   CANCELLED
 }
 
-model BudgetCategory {
+model BudgetCategory @map("budget_categories") {
   id              String  @id @default(cuid())
   budgetId        String
   categoryId      String
@@ -297,12 +279,11 @@ model BudgetCategory {
   budget   Budget              @relation(fields: [budgetId], references: [id], onDelete: Cascade)
   category TransactionCategory @relation(fields: [categoryId], references: [id])
 
-  @@unique([budgetId, categoryId])
-  @@map(\"budget_categories\")
+  @unique([budgetId, categoryId])
 }
 
 // Analytics and Reporting Models
-model FinancialSummary {
+model FinancialSummary @map("financial_summaries") {
   id            String   @id @default(cuid())
   farmId        String
   seasonYear    Int
@@ -313,11 +294,10 @@ model FinancialSummary {
   calculatedAt  DateTime @default(now())
   createdAt     DateTime @default(now())
 
-  @@unique([farmId, seasonYear])
-  @@map(\"financial_summaries\")
+  @unique([farmId, seasonYear])
 }
 
-model CropProfitability {
+model CropProfitability @map("crop_profitability") {
   id              String  @id @default(cuid())
   farmId          String
   cropId          String
@@ -331,12 +311,11 @@ model CropProfitability {
   calculatedAt    DateTime @default(now())
   createdAt       DateTime @default(now())
 
-  @@unique([farmId, cropId, seasonYear])
-  @@map(\"crop_profitability\")
+  @unique([farmId, cropId, seasonYear])
 }
 
 // System Models
-model AuditLog {
+model AuditLog @map("audit_logs") {
   id          String    @id @default(cuid())
   userId      String?
   action      String
@@ -348,19 +327,16 @@ model AuditLog {
   userAgent   String?
   createdAt   DateTime  @default(now())
 
-  @@index([userId])
-  @@index([entityType, entityId])
-  @@index([createdAt])
-  @@map(\"audit_logs\")
+  @index([userId])
+  @index([entityType, entityId])
+  @index([createdAt])
 }
 
-model SystemSettings {
+model SystemSettings @map("system_settings") {
   id        String   @id @default(cuid())
   key       String   @unique
   value     Json
   category  String
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
-
-  @@map(\"system_settings\")
 }
