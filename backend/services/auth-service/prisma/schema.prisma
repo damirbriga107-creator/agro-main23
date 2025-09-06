@@ -228,9 +228,9 @@ model Transaction  {
   crop     Crop?               @relation(fields: [cropId], references: [id])
   user     User                @relation(fields: [userId], references: [id])
 
-  @index([farmId, transactionDate])
-  @index([categoryId])
-  @index([transactionDate])
+  @@index([farmId, transactionDate])
+  @@index([categoryId])
+  @@index([transactionDate])
 }
 
 enum PaymentMethod {
