@@ -212,7 +212,7 @@ export class AuthService {
   /**
    * Generate access and refresh tokens
    */
-  private async generateTokens(userId: string, email: string, role: string): Promise<AuthTokens> { // role: UserRole
+  private async generateTokens(userId: string, email: string, role: UserRole): Promise<AuthTokens> {
     const tokenPayload = { userId, email, role };
     
     const accessToken = TokenUtils.generateAccessToken(tokenPayload, this.jwtSecret, '15m');
@@ -220,7 +220,7 @@ export class AuthService {
     
     // Store refresh token in Redis with expiry
     const refreshTokenKey = `refresh_token:${userId}`;
-    await this.redis.setWithExpiry(refreshTokenKey, refreshToken, 7 * 24 * 60 * 60); // 7 days
+    await this.redis.set(refreshTokenKey, refreshToken, 7 * 24 * 60 * 60); // 7 days
     
     return {
       accessToken,

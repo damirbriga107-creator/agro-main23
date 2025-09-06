@@ -1,4 +1,4 @@
-import { Express } from 'express';
+import { Express, Application } from 'express';
 import { Logger } from '../utils/logger';
 import { PrismaService } from '../services/prisma.service';
 import { RedisService } from '../services/redis.service';

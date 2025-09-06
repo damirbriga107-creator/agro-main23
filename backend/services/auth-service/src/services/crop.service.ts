@@ -1,5 +1,4 @@
 import { PrismaService } from './prisma.service';
-import { Prisma } from '@prisma/client';
 
 interface CreateCropData {
   name: string;

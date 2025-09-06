@@ -1,11 +1,13 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+// Use require to avoid type generation issues if Prisma types are not available at build time
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { PrismaClient } = require('@prisma/client');
 import { Logger } from '../utils/logger';
 
 /**
  * Enhanced Prisma Service with connection management and logging
  */
 export class PrismaService {
-  public client: PrismaClient;
+  public client: any;
   private logger: Logger;
   private isConnected: boolean = false;
 
@@ -172,22 +174,22 @@ export class PrismaService {
    * Handle Prisma errors and convert to application errors
    */
   private handlePrismaError(error: any): Error {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      switch (error.code) {
-        case 'P2002':
-          return new Error(`Unique constraint violation: ${error.meta?.target}`);
-        case 'P2025':
-          return new Error('Record not found');
-        case 'P2003':
-          return new Error('Foreign key constraint violation');
-        case 'P2014':
-          return new Error('Invalid ID provided');
-        default:
-          return new Error(`Database error: ${error.message}`);
-      }
+    // Best-effort mapping without Prisma types at compile time
+    const code = (error && (error.code || error?.meta?.code)) as string | undefined;
+    switch (code) {
+      case 'P2002':
+        return new Error(`Unique constraint violation: ${error.meta?.target}`);
+      case 'P2025':
+        return new Error('Record not found');
+      case 'P2003':
+        return new Error('Foreign key constraint violation');
+      case 'P2014':
+        return new Error('Invalid ID provided');
+      default:
+        break;
     }
 
-    // Handle other Prisma errors by checking error types
+    // Handle other Prisma errors by checking error messages
     if (error?.message?.includes('initialization')) {
       return new Error('Failed to initialize database connection');
     }

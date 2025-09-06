@@ -127,7 +127,7 @@ export class AuthMiddleware {
    * Require admin role for sensitive operations
    */
   public static requireAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
-    return AuthMiddleware.requireRole(UserRole.ADMIN)(req, res, next);
+    AuthMiddleware.requireRole(UserRole.ADMIN)(req, res, next);
   }
 
   /**
@@ -135,7 +135,7 @@ export class AuthMiddleware {
    */
   public static requireUserManagement(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
     const allowedRoles: UserRole[] = [UserRole.ADMIN, UserRole.MANAGER];
-    return AuthMiddleware.requireRole(allowedRoles)(req, res, next);
+    AuthMiddleware.requireRole(allowedRoles)(req, res, next);
   }
 
   /**

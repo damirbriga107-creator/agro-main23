@@ -204,10 +204,10 @@ export function setupUserRoutes(app: Express, dependencies: ServiceDependencies,
     AuthMiddleware.requireRole([UserRole.ADMIN]),
     ValidationMiddleware.validate({ params: ValidationMiddleware.schemas.id }),
     ValidationMiddleware.validate({
-      body: {
+      body: Joi.object({
         status: Joi.string().valid('ACTIVE', 'INACTIVE', 'SUSPENDED').required(),
         reason: Joi.string().max(500).optional()
-      }
+      })
     }),
     ErrorHandlerMiddleware.asyncHandler(async (req, res) => {
       logger.info('Update user status request', {
