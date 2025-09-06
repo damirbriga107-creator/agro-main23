@@ -1,4 +1,4 @@
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils/logger.js';
 import { EnvironmentUtils } from '@daorsagro/config';
 
 interface ServiceEndpoint {
