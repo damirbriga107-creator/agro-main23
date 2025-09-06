@@ -1,6 +1,6 @@
 import { HealthCheck, HealthStatus } from '@daorsagro/types';
 import { EnvironmentUtils } from '@daorsagro/config';
-import { Logger } from '../utils/logger';
+import { Logger } from '../utils/logger.js';
 
 /**
  * Health check service for monitoring system status
