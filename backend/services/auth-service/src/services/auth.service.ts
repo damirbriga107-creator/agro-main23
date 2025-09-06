@@ -274,7 +274,7 @@ export class AuthService {
   async logoutUser(userId: string): Promise<void> {
     try {
       // Remove refresh token from Redis
-      await this.redis.delete(`refresh_token:${userId}`);
+      await this.redis.del(`refresh_token:${userId}`);
       
       this.logger.info('User logged out successfully', { userId });
     } catch (error) {

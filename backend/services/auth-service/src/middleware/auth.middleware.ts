@@ -141,7 +141,7 @@ export class AuthMiddleware {
   /**
    * Check if user can access their own profile or if they're an admin/manager
    */
-  public static requireSelfOrElevated(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
+  public static requireSelfOrElevated(req: AuthenticatedRequest, res: Response, next: NextFunction): void | Response {
     if (!req.user) {
       return res.status(401).json({
         error: {

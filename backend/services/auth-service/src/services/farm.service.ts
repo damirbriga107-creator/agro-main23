@@ -1,4 +1,5 @@
 import { PrismaService } from './prisma.service';
+import { FarmMemberRole } from '@prisma/client';
 
 interface CreateFarmData {
   name: string;

@@ -1,4 +1,4 @@
-import { Router, Express } from 'express';
+import { Router, Application } from 'express';
 import Joi from 'joi';
 import { ValidationMiddleware } from '../middleware/validation.middleware';
 import { ErrorHandlerMiddleware } from '../middleware/error-handler.middleware';
@@ -10,7 +10,7 @@ import { UserRole } from '../utils';
 /**
  * Setup user management routes
  */
-export function setupUserRoutes(app: Express, dependencies: ServiceDependencies, basePath: string): void {
+export function setupUserRoutes(app: Application, dependencies: ServiceDependencies, basePath: string): void {
   const router = Router();
   const { logger, prisma, redis, emailService, config } = dependencies;
   

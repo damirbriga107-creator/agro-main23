@@ -131,7 +131,7 @@ export class PrismaService {
    * Execute transaction with error handling
    */
   public async transaction<T>(
-    fn: (prisma: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>) => Promise<T>,
+    fn: (prisma: any) => Promise<T>,
     options?: {
       maxWait?: number;
       timeout?: number;
