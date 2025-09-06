@@ -3,6 +3,16 @@
   "version": "1.0.0",
   "description": "DaorsAgro - Complete Agricultural Financial Management Platform",
   "private": true,
+  "workspaces": [
+    "backend/shared/types",
+    "backend/shared/config",
+    "backend/shared/utils",
+    "backend/shared/database",
+    "backend/api-gateway",
+    "backend/services/*",
+    "frontend-app",
+    "daorsagro-frontend"
+  ],
   "scripts": {
     "install:all": "npm install",
     "build": "npm run build --workspaces",
