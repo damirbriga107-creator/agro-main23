@@ -26,7 +26,8 @@ async function verifyAdminUser() {
       console.log('❌ Admin user not found');
     }
   } catch (error) {
-    console.error('❌ Error verifying admin user:', error.message);
+    console.error('❌ Error verifying admin user:', error.message || error);
+    console.error('Full error:', error);
   } finally {
     await pool.end();
   }
