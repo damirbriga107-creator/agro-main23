@@ -418,23 +418,16 @@ const createAdvancedProxy = (serviceName, targetPath = '/') => {
     target: config.services[serviceName].url,
     changeOrigin: true,
     timeout: config.services[serviceName].timeout,
-    pathRewrite: {
-      [`^/api/${serviceName}`]: targetPath
-    },
-    onProxyReq: (proxyReq, req, res) => {
-      // Add request ID and user info to downstream services
-      proxyReq.setHeader('X-Request-ID', req.requestId);
-      if (req.user) {
-        proxyReq.setHeader('X-User-ID', req.user.id);
-        proxyReq.setHeader('X-User-Role', req.user.role);
+    pathRewrite: (path, req) => {
+      // For auth service, preserve the full path
+      if (serviceName === 'auth') {
+        return path; // Don't rewrite, keep the full path
       }
-      
-      logger.info(`Proxying ${req.method} ${req.originalUrl} to ${serviceName}`);
+      return path.replace(new RegExp(`^/api/${serviceName}`), targetPath);
     },
-    onProxyRes: (proxyRes, req, res) => {
-      // Add response headers
-      proxyRes.headers['X-Gateway-Service'] = serviceName;
-      proxyRes.headers['X-Request-ID'] = req.requestId;
+    onProxyRes: function(proxyRes, req, res) {
+      // Ensure proper response handling
+      logger.info(`Proxy response received for ${req.method} ${req.originalUrl}: ${proxyRes.statusCode}`);
     },
     onError: (err, req, res) => {
       logger.error(`${serviceName} service proxy error:`, {
@@ -445,20 +438,30 @@ const createAdvancedProxy = (serviceName, targetPath = '/') => {
 
       // Circuit breaker check
       if (!serviceRegistry.isServiceAvailable(serviceName)) {
-        return res.status(503).json({ 
+        return res.status(503).json({
           error: `${serviceName} service is currently unavailable`,
           requestId: req.requestId,
           circuitBreaker: true
         });
       }
 
-      res.status(503).json({ 
+      res.status(503).json({
         error: `${serviceName} service error`,
         requestId: req.requestId,
-        message: err.message 
+        message: err.message
       });
     },
-    router: (req) => {
+    onProxyReq: function(proxyReq, req, res) {
+      // Add request ID and user info to downstream services
+      proxyReq.setHeader('X-Request-ID', req.requestId);
+      if (req.user) {
+        proxyReq.setHeader('X-User-ID', req.user.id);
+        proxyReq.setHeader('X-User-Role', req.user.role);
+      }
+
+      logger.info(`Proxying ${req.method} ${req.originalUrl} to ${serviceName}`);
+    },
+    router: function(req) {
       // Circuit breaker check before routing
       if (!serviceRegistry.isServiceAvailable(serviceName)) {
         return null; // This will trigger onError
@@ -469,7 +472,7 @@ const createAdvancedProxy = (serviceName, targetPath = '/') => {
 };
 
 // Public routes (no authentication required)
-app.use('/api/auth', createAdvancedProxy('auth'));
+app.use('/api/v1/auth', createAdvancedProxy('auth', '/api/v1'));
 
 // Protected routes (authentication required)
 const protectedRoutes = [
