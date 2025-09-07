@@ -426,8 +426,9 @@ const createAdvancedProxy = (serviceName, targetPath = '/') => {
       return path.replace(new RegExp(`^/api/${serviceName}`), targetPath);
     },
     onProxyRes: function(proxyRes, req, res) {
-      // Ensure proper response handling
+      // Log the response but don't interfere with default handling
       logger.info(`Proxy response received for ${req.method} ${req.originalUrl}: ${proxyRes.statusCode}`);
+      // Don't modify the response, let http-proxy-middleware handle it
     },
     onError: (err, req, res) => {
       logger.error(`${serviceName} service proxy error:`, {
