@@ -17,7 +17,7 @@ export const seed: SeedData = {
       // Create sample users
       const users = [
         {
-          email: 'admin@daorsagro.com',
+          email: 'admin@gmail.com',
           firstName: 'System',
           lastName: 'Administrator',
           phone: '+1-555-0001',

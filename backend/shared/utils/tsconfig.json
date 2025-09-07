@@ -12,6 +12,9 @@
     "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "skipLibCheck": true,
     "baseUrl": ".",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": false,
     "paths": {
       "@daorsagro/config": ["../config/dist"],
       "@daorsagro/types": ["../types/dist"]
