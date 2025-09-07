@@ -12,14 +12,14 @@ import { ServiceConfigFactory, EnvironmentUtils } from '@daorsagro/config';
 import { TokenUtils, ErrorUtils } from '@daorsagro/utils';
 import { ApiError, TokenPayload } from '@daorsagro/types';
 
-import { Logger } from './utils/logger.js';
-import { AuthMiddleware } from './middleware/auth.middleware.js';
-import { ValidationMiddleware } from './middleware/validation.middleware.js';
-import { ErrorHandlerMiddleware } from './middleware/error-handler.middleware.js';
-import { HealthCheckService } from './services/health-check.service.js';
-import { MetricsService } from './services/metrics.service.js';
-import { ServiceDiscoveryService } from './services/service-discovery.service.js';
-import { setupSwagger } from './utils/swagger.js';
+import { Logger } from './utils/logger.ts';
+import { AuthMiddleware } from './middleware/auth.middleware.ts';
+import { ValidationMiddleware } from './middleware/validation.middleware.ts';
+import { ErrorHandlerMiddleware } from './middleware/error-handler.middleware.ts';
+import { HealthCheckService } from './services/health-check.service.ts';
+import { MetricsService } from './services/metrics.service.ts';
+import { ServiceDiscoveryService } from './services/service-discovery.service.ts';
+import { setupSwagger } from './utils/swagger.ts';
 
 /**
  * API Gateway Application
