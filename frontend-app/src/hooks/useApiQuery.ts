@@ -102,7 +102,7 @@ interface UseApiMutationOptions<TData, TError = ApiError, TVariables = void> ext
   invalidateQueries?: (string | number)[][];
   optimisticUpdate?: {
     queryKey: (string | number)[];
-    updateFn: (oldData: any, variables: TVariables) => any;
+    updateFn: (oldData: unknown, variables: TVariables) => unknown;
   };
 }
 
@@ -129,16 +129,16 @@ export function useApiMutation<TData = unknown, TError = ApiError, TVariables = 
       if (optimisticUpdate) {
         await queryClient.cancelQueries(optimisticUpdate.queryKey);
         const previousData = queryClient.getQueryData(optimisticUpdate.queryKey);
-        
+
         queryClient.setQueryData(
           optimisticUpdate.queryKey,
-          (oldData: any) => optimisticUpdate.updateFn(oldData, variables)
+          (oldData: unknown) => optimisticUpdate.updateFn(oldData, variables)
         );
-        
-        return { previousData } as any;
+
+        return { previousData };
       }
-      
-      return options.onMutate?.(variables) as any;
+
+      return options.onMutate?.(variables);
     },
   onSuccess: (data, variables, context: any) => {
       // Invalidate and refetch queries
