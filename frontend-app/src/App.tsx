@@ -29,7 +29,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <Router future={{ v7_relativeSplatPath: true }}>
+          <Router>
             <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
               <Toaster
                 position="top-right"
@@ -41,19 +41,17 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route
-                  path="/*"
+                  path="/"
                   element={
                     <ProtectedRoute>
-                      <Layout>
-                        <Routes>
-                          <Route path="/" element={<Dashboard />} />
-                          <Route path="/documents/*" element={<Documents />} />
-                          {/* Add other routes as they are implemented */}
-                        </Routes>
-                      </Layout>
+                      <Layout />
                     </ProtectedRoute>
                   }
-                />
+                >
+                  <Route index element={<Dashboard />} />
+                  <Route path="documents/*" element={<Documents />} />
+                  {/* Add other routes as they are implemented */}
+                </Route>
               </Routes>
             </div>
           </Router>

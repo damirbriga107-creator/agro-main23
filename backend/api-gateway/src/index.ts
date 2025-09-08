@@ -12,14 +12,14 @@ import { ServiceConfigFactory, EnvironmentUtils } from '@daorsagro/config';
 import { TokenUtils, ErrorUtils } from '@daorsagro/utils';
 import { ApiError, TokenPayload } from '@daorsagro/types';
 
-import { Logger } from './utils/logger.ts';
-import { AuthMiddleware } from './middleware/auth.middleware.ts';
-import { ValidationMiddleware } from './middleware/validation.middleware.ts';
-import { ErrorHandlerMiddleware } from './middleware/error-handler.middleware.ts';
-import { HealthCheckService } from './services/health-check.service.ts';
-import { MetricsService } from './services/metrics.service.ts';
-import { ServiceDiscoveryService } from './services/service-discovery.service.ts';
-import { setupSwagger } from './utils/swagger.ts';
+import { Logger } from './utils/logger';
+import { AuthMiddleware } from './middleware/auth.middleware';
+import { ValidationMiddleware } from './middleware/validation.middleware';
+import { ErrorHandlerMiddleware } from './middleware/error-handler.middleware';
+import { HealthCheckService } from './services/health-check.service';
+import { MetricsService } from './services/metrics.service';
+import { ServiceDiscoveryService } from './services/service-discovery.service';
+import { setupSwagger } from './utils/swagger';
 
 /**
  * API Gateway Application
@@ -75,10 +75,10 @@ class ApiGateway {
 
     // CORS configuration
     this.app.use(cors({
-      origin: EnvironmentUtils.getArray('CORS_ORIGIN', ['http://localhost:3000']) as string[],
+      origin: EnvironmentUtils.getArray('CORS_ORIGIN', ['http://localhost:5173', 'http://localhost:3000']) as string[],
       credentials: EnvironmentUtils.getBoolean('CORS_CREDENTIALS', true),
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-API-Version'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id', 'X-Request-ID', 'X-API-Version'],
       exposedHeaders: ['X-Total-Count', 'X-Rate-Limit-Remaining']
     }));
 
