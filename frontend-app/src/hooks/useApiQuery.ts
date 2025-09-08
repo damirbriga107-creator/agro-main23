@@ -46,6 +46,7 @@ interface UseApiQueryOptions<TData, TError = ApiError> extends Omit<UseQueryOpti
   errorMessage?: string;
   retries?: number;
   retryDelay?: number;
+  onError?: (error: TError) => void;
 }
 
 export function useApiQuery<TData = unknown, TError = ApiError>({
@@ -143,7 +144,7 @@ export function useApiMutation<TData = unknown, TError = ApiError, TVariables = 
   onSuccess: (data, variables, context: any) => {
       // Invalidate and refetch queries
       invalidateQueries.forEach((queryKey) => {
-        queryClient.invalidateQueries(queryKey);
+        queryClient.invalidateQueries({ queryKey });
       });
 
       // Show success toast
@@ -175,7 +176,7 @@ export function useApiMutation<TData = unknown, TError = ApiError, TVariables = 
   onSettled: (data, error, variables, context: any) => {
       // Invalidate queries on settlement (success or error)
       invalidateQueries.forEach((queryKey) => {
-        queryClient.invalidateQueries(queryKey);
+        queryClient.invalidateQueries({ queryKey });
       });
 
       onSettled?.(data, error, variables, context);
