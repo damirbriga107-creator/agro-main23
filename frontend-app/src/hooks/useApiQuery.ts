@@ -40,7 +40,7 @@ export class ApiException extends Error {
 
 // Enhanced API Query Hook
 interface UseApiQueryOptions<TData, TError = ApiError> extends Omit<UseQueryOptions<TData, TError>, 'queryKey' | 'queryFn'> {
-  queryKey: (string | number | boolean | undefined | null)[];
+  queryKey: readonly unknown[];
   queryFn: () => Promise<TData>;
   showErrorToast?: boolean;
   errorMessage?: string;
