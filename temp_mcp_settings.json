@@ -43,7 +43,7 @@
         "@testsprite/testsprite-mcp@latest"
       ],
       "env": {
-        "API_KEY": "sk-user-939UGa1wIcNwtQrr4YdjD30oK9UkLVjFZpUQaNSNHxWyMGwxUfqkNlSkZrv6OzJOCZfnih_Dkibv5ODYKyqJQgzcU6a3r6gqZ48dj-gDMrgyCWOKdHgZN4GiG1XcycMD5jI"
+        "API_KEY": "${API_KEY}"
       }
     }
   }
