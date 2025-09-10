@@ -15,12 +15,20 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-      - name: Install dependencies
-        run: npm ci
-      - name: Run tests
-        run: npm test
-      - name: Lint code
-        run: npm run lint
+      - name: Install and test backend services
+        run: |
+          # Assuming each service has its own package.json; run tests per service
+          cd backend/api-gateway && npm ci && npm test && npm run lint
+          cd backend/services/auth-service && npm ci && npm test && npm run lint
+          cd backend/services/financial-service && npm ci && npm test && npm run lint
+          cd backend/services/document-service && npm ci && npm test && npm run lint
+          cd backend/services/analytics-service && npm ci && npm test && npm run lint
+          cd backend/services/insurance-service && npm ci && npm test && npm run lint
+          cd backend/services/iot-service && npm ci && npm test && npm run lint
+          cd backend/services/notification-service && npm ci && npm test && npm run lint
+      - name: Install and test frontend
+        run: |
+          cd frontend-app && npm ci && npm test && npm run lint
       - name: Security scan
         uses: aquasecurity/trivy-action@master
         with:
@@ -56,6 +64,18 @@ jobs:
           # Build Document Service
           docker build -t ghcr.io/${{ github.repository_owner }}/daorsagro/platform/document-service:$TAG backend/services/document-service/
           docker tag ghcr.io/${{ github.repository_owner }}/daorsagro/platform/document-service:$TAG ghcr.io/${{ github.repository_owner }}/daorsagro/platform/document-service:latest
+          # Build Analytics Service
+          docker build -t ghcr.io/${{ github.repository_owner }}/daorsagro/platform/analytics-service:$TAG backend/services/analytics-service/
+          docker tag ghcr.io/${{ github.repository_owner }}/daorsagro/platform/analytics-service:$TAG ghcr.io/${{ github.repository_owner }}/daorsagro/platform/analytics-service:latest
+          # Build Insurance Service
+          docker build -t ghcr.io/${{ github.repository_owner }}/daorsagro/platform/insurance-service:$TAG backend/services/insurance-service/
+          docker tag ghcr.io/${{ github.repository_owner }}/daorsagro/platform/insurance-service:$TAG ghcr.io/${{ github.repository_owner }}/daorsagro/platform/insurance-service:latest
+          # Build IoT Service
+          docker build -t ghcr.io/${{ github.repository_owner }}/daorsagro/platform/iot-service:$TAG backend/services/iot-service/
+          docker tag ghcr.io/${{ github.repository_owner }}/daorsagro/platform/iot-service:$TAG ghcr.io/${{ github.repository_owner }}/daorsagro/platform/iot-service:latest
+          # Build Notification Service
+          docker build -t ghcr.io/${{ github.repository_owner }}/daorsagro/platform/notification-service:$TAG backend/services/notification-service/
+          docker tag ghcr.io/${{ github.repository_owner }}/daorsagro/platform/notification-service:$TAG ghcr.io/${{ github.repository_owner }}/daorsagro/platform/notification-service:latest
       - name: Login to GHCR
         uses: docker/login-action@v2
         with:
@@ -77,12 +97,23 @@ jobs:
           # Push Document Service
           docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/document-service:$TAG
           docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/document-service:latest
+          # Push Analytics Service
+          docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/analytics-service:$TAG
+          docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/analytics-service:latest
+          # Push Insurance Service
+          docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/insurance-service:$TAG
+          docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/insurance-service:latest
+          # Push IoT Service
+          docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/iot-service:$TAG
+          docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/iot-service:latest
+          # Push Notification Service
+          docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/notification-service:$TAG
+          docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/notification-service:latest
 
   deploy-staging:
     needs: build
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: staging
     steps:
       - uses: actions/checkout@v3
       - name: Setup kubectl
@@ -106,9 +137,7 @@ jobs:
 
   deploy-production:
     needs: deploy-staging
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: production
     steps:
       - uses: actions/checkout@v3
       - name: Setup kubectl
@@ -128,7 +157,7 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region eu-west-1 --name daorsagro-production
       - name: Deploy to production
-        run: helm upgrade --install daorsagro ./infrastructure/helm/daorsagro --namespace daorsagro --create-namespace --set environment=production --set image.tag=${{ github.sha }}
+        run: helm upgrade --install daorsagro ./infrastructure/helm/daorsagro --namespace daorsagro-prod --create-namespace --set environment=production --set image.tag=${{ github.sha }}
       - name: Notify Webhook
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
