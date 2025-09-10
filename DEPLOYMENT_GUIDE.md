@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides step-by-step instructions for deploying the DaorsAgro platform in a production environment with all the enhanced backend architecture improvements.
+This guide provides step-by-step instructions for deploying the DaorsAgro platform in a production and staging environment with enhanced backend architecture improvements, including increased replicas for critical services, resource limits, health checks, and S3 backup integration.
 
 ## Prerequisites
 
@@ -67,6 +67,34 @@ chmod +x scripts/*.sh
 # View logs
 ./scripts/deploy-production.sh logs api-gateway
 ```
+
+## Staging Deployment
+
+For Phase 1 staging using Docker Compose enhancements:
+
+### 1. Staging Setup
+```bash
+# Use production compose for staging
+docker-compose -f docker-compose.production.yml up -d
+
+# Scale critical services (replicas=3 for api-gateway, auth-service, financial-service)
+docker-compose -f docker-compose.production.yml up -d --scale api-gateway=3 --scale auth-service=3 --scale financial-service=3
+
+# Verify health checks (depends_on with service_healthy)
+docker-compose -f docker-compose.production.yml ps
+```
+
+### 2. Testing Staging
+- Access Traefik dashboard at http://localhost:8080 to verify routing
+- Test API endpoints via http://localhost:80/api (assuming Traefik config)
+- Monitor resources with `docker stats`
+- Run backup script: `./scripts/backup-to-s3.sh` (assumes AWS env vars set)
+
+### 3. Enhancements Applied
+- Replicas: 3 for api-gateway, auth-service, financial-service; 2 for frontend-app; 1 for others
+- Resources: Services limited to 512M memory/0.25 CPU (reservations 256M/0.125); DBs to 4G/2.0 CPU (reservations 2G/1.0)
+- Health Conditions: All depends_on use `condition: service_healthy` for reliable startup
+- Backup: Volume backups to S3 via scripts/backup-to-s3.sh
 
 ## Architecture Overview
 
@@ -186,17 +214,17 @@ docker exec -it agro-mongodb mongosh agro_production
 
 ### Service Management
 ```bash
-# View all services
-docker-compose -f docker-compose.enhanced.yml ps
+# For staging, use production compose file
+docker-compose -f docker-compose.production.yml ps
 
 # Restart specific service
-docker-compose -f docker-compose.enhanced.yml restart api-gateway
+docker-compose -f docker-compose.production.yml restart api-gateway
 
-# Scale service (if needed)
-docker-compose -f docker-compose.enhanced.yml up -d --scale api-gateway=3
+# Scale services for staging (e.g., critical services to 3 replicas)
+docker-compose -f docker-compose.production.yml up -d --scale api-gateway=3 --scale auth-service=3 --scale financial-service=3
 
 # View service logs
-docker-compose -f docker-compose.enhanced.yml logs -f api-gateway
+docker-compose -f docker-compose.production.yml logs -f api-gateway
 ```
 
 ### Data Management
@@ -243,6 +271,15 @@ Access Grafana at http://localhost:3001 (admin/admin)
 ```bash
 # Backups are created automatically before deployment
 # Location: ./backups/backup_YYYYMMDD_HHMMSS/
+```
+
+### S3 Backup Integration
+For staging/production volume backups to S3:
+```bash
+# Run the backup script (assumes AWS CLI installed and env vars set)
+./scripts/backup-to-s3.sh
+
+# This backs up postgres_data, mongodb_data, etc., to s3://$S3_BACKUP_BUCKET/backups/
 ```
 
 ### Manual Backup
