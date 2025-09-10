@@ -41,6 +41,20 @@ provider "aws" {
   }
 }
 
+provider "aws" {
+  alias  = "dr"
+  region = var.dr_region
+  
+  default_tags {
+    tags = {
+      Project     = "DaorsAgro"
+      Environment = var.environment
+      ManagedBy   = "Terraform"
+      Type        = "DR"
+    }
+  }
+}
+
 # Data sources
 data "aws_availability_zones" "available" {
   state = "available"
@@ -245,7 +259,95 @@ module "eks" {
     }
   }
 
+  # Cluster Autoscaler addon
+  cluster_addons = {
+    coredns = {
+      most_recent = true
+    }
+    kube-proxy = {
+      most_recent = true
+    }
+    vpc-cni = {
+      most_recent = true
+    }
+    aws-ebs-csi-driver = {
+      most_recent = true
+    }
+    cluster-autoscaler = {
+      most_recent = true
+      configuration_values = jsonencode({
+        autoDiscovery = {
+          clusterName = local.cluster_name
+        }
+        cloudProvider = "aws"
+        awsRegion = var.aws_region
+        "expander" = "priority"
+        scanInterval = "10s"
+        "skip-nodes-with-local-storage" = false
+      })
+    }
+  }
+
   tags = local.common_tags
+}
+
+module "eks_dr" {
+  count  = var.enable_dr ? 1 : 0
+  source = "terraform-aws-modules/eks/aws"
+  version = "~> 19.0"
+
+  providers = {
+    aws = aws.dr
+  }
+
+  cluster_name    = "${local.cluster_name}-dr"
+  cluster_version = var.kubernetes_version
+
+  vpc_id                         = module.vpc_dr[0].vpc_id
+  subnet_ids                     = module.vpc_dr[0].private_subnets
+  cluster_endpoint_public_access = true
+  cluster_endpoint_private_access = true
+
+  # Cluster encryption
+  cluster_encryption_config = {
+    provider_key_arn = aws_kms_key.eks_dr[0].arn
+    resources        = ["secrets"]
+  }
+
+  # Cluster logging
+  cluster_enabled_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+
+  # EKS Managed Node Groups for DR (minimal)
+  eks_managed_node_groups = {
+    general = {
+      name = "general-dr"
+      
+      instance_types = ["t3.large", "t3.xlarge"]
+      capacity_type  = "ON_DEMAND"
+      
+      min_size     = 1
+      max_size     = 3
+      desired_size = 1
+
+      ami_type       = "AL2_x86_64"
+      disk_size      = 50
+      disk_type      = "gp3"
+      disk_encrypted = true
+
+      labels = {
+        role = "general-dr"
+      }
+
+      tags = merge(local.common_tags, {
+        NodeGroup = "general-dr"
+        Type      = "DR"
+      })
+    }
+  }
+
+  tags = merge(local.common_tags, {
+    Type = "DR"
+  })
 }
 
 # KMS Key for EKS encryption
@@ -272,6 +374,19 @@ resource "aws_db_subnet_group" "main" {
   tags = merge(local.common_tags, {
     Name = "${local.cluster_name}-db-subnet-group"
   })
+}
+
+resource "aws_db_subnet_group" "dr_main" {
+  count      = var.enable_dr ? 1 : 0
+  name       = "${local.cluster_name}-dr-db-subnet-group"
+  subnet_ids = module.vpc_dr[0].private_subnets
+
+  tags = merge(local.common_tags, {
+    Name = "${local.cluster_name}-dr-db-subnet-group"
+    Type = "DR"
+  })
+
+  provider = aws.dr
 }
 
 resource "aws_security_group" "rds" {
@@ -342,6 +457,57 @@ resource "aws_db_instance" "main" {
   tags = merge(local.common_tags, {
     Name = "${local.cluster_name}-postgres"
   })
+}
+
+resource "aws_db_instance" "dr_main" {
+  count = var.enable_dr ? 1 : 0
+
+  identifier = "${local.cluster_name}-dr-postgres"
+  replicate_source_db = aws_db_instance.main.identifier
+
+  # Engine configuration
+  engine         = "postgres"
+  engine_version = "15.4"
+  instance_class = var.rds_instance_class
+
+  # Storage configuration
+  allocated_storage     = var.rds_allocated_storage
+  max_allocated_storage = var.rds_max_allocated_storage
+  storage_type          = "gp3"
+  storage_encrypted     = true
+  kms_key_id           = aws_kms_key.rds_dr[0].arn
+
+  # Database configuration
+  username = "postgres"
+
+  # Network configuration
+  db_subnet_group_name   = aws_db_subnet_group.dr_main[0].name
+  vpc_security_group_ids = [aws_security_group.rds_dr[0].id]
+  publicly_accessible    = false
+
+  # Backup configuration
+  backup_retention_period = 7
+  backup_window          = "03:00-04:00"
+  maintenance_window     = "sun:04:00-sun:05:00"
+
+  # Monitoring
+  monitoring_interval = 60
+  monitoring_role_arn = aws_iam_role.rds_monitoring_dr[0].arn
+
+  # Performance Insights
+  performance_insights_enabled = true
+  performance_insights_kms_key_id = aws_kms_key.rds_dr[0].arn
+
+  # Deletion protection
+  deletion_protection = false
+  skip_final_snapshot = true
+
+  tags = merge(local.common_tags, {
+    Name = "${local.cluster_name}-dr-postgres"
+    Type = "DR"
+  })
+
+  provider = aws.dr
 }
 
 # KMS Key for RDS encryption
@@ -418,6 +584,35 @@ resource "aws_s3_bucket" "documents" {
   tags = merge(local.common_tags, {
     Name = "${local.cluster_name}-documents"
   })
+}
+
+resource "aws_s3_bucket_replication_configuration" "documents_replication" {
+  count  = var.enable_dr ? 1 : 0
+  bucket = aws_s3_bucket.documents.id
+  role   = aws_iam_role.s3_replication[0].arn
+
+  rule {
+    id     = "dr-replication"
+    status = "Enabled"
+
+    destination {
+      bucket        = aws_s3_bucket.dr_documents[0].bucket
+      storage_class = "STANDARD"
+      account       = data.aws_caller_identity.current.account_id
+    }
+
+    source_selection_criteria {
+      sse_kms_encrypted_objects {
+        status = "Enabled"
+      }
+    }
+
+    delete_marker_replication {
+      status = "Enabled"
+    }
+  }
+
+  provider = aws.dr
 }
 
 resource "aws_s3_bucket_versioning" "documents" {
