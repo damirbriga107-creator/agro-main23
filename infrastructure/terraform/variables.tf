@@ -272,3 +272,15 @@ variable "additional_tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "dr_region" {
+  description = "DR AWS region"
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "enable_dr" {
+  description = "Enable multi-region DR"
+  type        = bool
+  default     = true
+}

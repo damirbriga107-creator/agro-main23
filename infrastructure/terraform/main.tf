@@ -62,6 +62,13 @@ data "aws_availability_zones" "available" {
 
 data "aws_caller_identity" "current" {}
 
+data "aws_availability_zones" "dr_available" {
+  count = var.enable_dr ? 1 : 0
+  state = "available"
+
+  provider = aws.dr
+}
+
 # Local values
 locals {
   cluster_name = "daorsagro-${var.environment}"
@@ -104,6 +111,45 @@ module "vpc" {
   }
 
   tags = local.common_tags
+}
+
+module "vpc_dr" {
+  count  = var.enable_dr ? 1 : 0
+  source = "terraform-aws-modules/vpc/aws"
+  version = "~> 5.0"
+
+  providers = {
+    aws = aws.dr
+  }
+
+  name = "${local.cluster_name}-dr-vpc"
+  cidr = var.vpc_cidr
+
+  azs             = slice(data.aws_availability_zones.dr_available[0].names, 0, 3)
+  private_subnets = var.private_subnets
+  public_subnets  = var.public_subnets
+
+  enable_nat_gateway   = true
+  enable_vpn_gateway   = false
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  # Enable VPC Flow Logs
+  enable_flow_log                      = true
+  create_flow_log_cloudwatch_iam_role  = true
+  create_flow_log_cloudwatch_log_group = true
+
+  public_subnet_tags = {
+    "kubernetes.io/role/elb" = "1"
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/role/internal-elb" = "1"
+  }
+
+  tags = merge(local.common_tags, {
+    Type = "DR"
+  })
 }
 
 # EKS Cluster
@@ -366,6 +412,30 @@ resource "aws_kms_alias" "eks" {
   target_key_id = aws_kms_key.eks.key_id
 }
 
+resource "aws_kms_key" "eks_dr" {
+  count = var.enable_dr ? 1 : 0
+
+  description             = "EKS DR Secret Encryption Key"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+
+  tags = merge(local.common_tags, {
+    Name = "${local.cluster_name}-dr-eks-key"
+    Type = "DR"
+  })
+
+  provider = aws.dr
+}
+
+resource "aws_kms_alias" "eks_dr" {
+  count = var.enable_dr ? 1 : 0
+
+  name          = "alias/${local.cluster_name}-dr-eks"
+  target_key_id = aws_kms_key.eks_dr[0].key_id
+
+  provider = aws.dr
+}
+
 # RDS for PostgreSQL
 resource "aws_db_subnet_group" "main" {
   name       = "${local.cluster_name}-db-subnet-group"
@@ -410,6 +480,34 @@ resource "aws_security_group" "rds" {
   tags = merge(local.common_tags, {
     Name = "${local.cluster_name}-rds-sg"
   })
+}
+
+resource "aws_security_group" "rds_dr" {
+  count = var.enable_dr ? 1 : 0
+
+  name_prefix = "${local.cluster_name}-dr-rds-"
+  vpc_id      = module.vpc_dr[0].vpc_id
+
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(local.common_tags, {
+    Name = "${local.cluster_name}-dr-rds-sg"
+    Type = "DR"
+  })
+
+  provider = aws.dr
 }
 
 resource "aws_db_instance" "main" {
@@ -521,6 +619,21 @@ resource "aws_kms_key" "rds" {
   })
 }
 
+resource "aws_kms_key" "rds_dr" {
+  count = var.enable_dr ? 1 : 0
+
+  description             = "RDS DR Encryption Key"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+
+  tags = merge(local.common_tags, {
+    Name = "${local.cluster_name}-dr-rds-key"
+    Type = "DR"
+  })
+
+  provider = aws.dr
+}
+
 # ElastiCache for Redis
 resource "aws_elasticache_subnet_group" "main" {
   name       = "${local.cluster_name}-cache-subnet"
@@ -586,6 +699,19 @@ resource "aws_s3_bucket" "documents" {
   })
 }
 
+resource "aws_s3_bucket" "dr_documents" {
+  count = var.enable_dr ? 1 : 0
+
+  bucket = "${local.cluster_name}-dr-documents"
+
+  tags = merge(local.common_tags, {
+    Name = "${local.cluster_name}-dr-documents"
+    Type = "DR"
+  })
+
+  provider = aws.dr
+}
+
 resource "aws_s3_bucket_replication_configuration" "documents_replication" {
   count  = var.enable_dr ? 1 : 0
   bucket = aws_s3_bucket.documents.id
@@ -611,6 +737,71 @@ resource "aws_s3_bucket_replication_configuration" "documents_replication" {
       status = "Enabled"
     }
   }
+
+  provider = aws.dr
+}
+
+resource "aws_iam_role" "s3_replication" {
+  count = var.enable_dr ? 1 : 0
+
+  name = "${local.cluster_name}-s3-replication"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "s3.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = local.common_tags
+
+  provider = aws.dr
+}
+
+resource "aws_iam_role_policy" "s3_replication_policy" {
+  count = var.enable_dr ? 1 : 0
+
+  name = "${local.cluster_name}-s3-replication-policy"
+
+  role = aws_iam_role.s3_replication[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:ReplicateObject",
+          "s3:ReplicateDelete",
+          "s3:ReplicateTags",
+          "s3:GetObjectVersionTagging"
+        ]
+        Effect = "Allow"
+        Resource = [
+          "${aws_s3_bucket.documents.arn}/*"
+        ]
+      },
+      {
+        Action = [
+          "s3:PutObject",
+          "s3:PutObjectAcl",
+          "s3:PutObjectVersionTagging",
+          "s3:GetObjectTagging"
+        ]
+        Effect = "Allow"
+        Resource = [
+          "${aws_s3_bucket.dr_documents[0].arn}/*"
+        ]
+      }
+    ]
+  })
 
   provider = aws.dr
 }
@@ -678,6 +869,40 @@ resource "aws_iam_role" "rds_monitoring" {
 resource "aws_iam_role_policy_attachment" "rds_monitoring" {
   role       = aws_iam_role.rds_monitoring.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+}
+
+resource "aws_iam_role" "rds_monitoring_dr" {
+  count = var.enable_dr ? 1 : 0
+
+  name = "${local.cluster_name}-dr-rds-monitoring"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "monitoring.rds.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = merge(local.common_tags, {
+    Type = "DR"
+  })
+
+  provider = aws.dr
+}
+
+resource "aws_iam_role_policy_attachment" "rds_monitoring_dr" {
+  count = var.enable_dr ? 1 : 0
+
+  role       = aws_iam_role.rds_monitoring_dr[0].name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
+
+  provider = aws.dr
 }
 
 # Outputs
