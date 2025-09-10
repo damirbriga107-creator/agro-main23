@@ -36,6 +36,9 @@
       "command": "node",
       "args": [
         "mcp-servers/filesystem-server.js"
+      ],
+      "alwaysAllow": [
+        "read_file"
       ]
     },
     "code-analysis-server": {

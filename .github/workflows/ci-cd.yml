@@ -43,8 +43,19 @@ jobs:
           node-version: '18'
       - name: Build and tag Docker images
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/daorsagro/platform/api-gateway:${{ github.sha }} backend/api-gateway/
-          docker tag ghcr.io/${{ github.repository_owner }}/daorsagro/platform/api-gateway:${{ github.sha }} ghcr.io/${{ github.repository_owner }}/daorsagro/platform/api-gateway:latest
+          TAG=${{ github.sha }}
+          # Build API Gateway
+          docker build -t ghcr.io/${{ github.repository_owner }}/daorsagro/platform/api-gateway:$TAG backend/api-gateway/
+          docker tag ghcr.io/${{ github.repository_owner }}/daorsagro/platform/api-gateway:$TAG ghcr.io/${{ github.repository_owner }}/daorsagro/platform/api-gateway:latest
+          # Build Auth Service
+          docker build -t ghcr.io/${{ github.repository_owner }}/daorsagro/platform/auth-service:$TAG backend/services/auth-service/
+          docker tag ghcr.io/${{ github.repository_owner }}/daorsagro/platform/auth-service:$TAG ghcr.io/${{ github.repository_owner }}/daorsagro/platform/auth-service:latest
+          # Build Financial Service
+          docker build -t ghcr.io/${{ github.repository_owner }}/daorsagro/platform/financial-service:$TAG backend/services/financial-service/
+          docker tag ghcr.io/${{ github.repository_owner }}/daorsagro/platform/financial-service:$TAG ghcr.io/${{ github.repository_owner }}/daorsagro/platform/financial-service:latest
+          # Build Document Service
+          docker build -t ghcr.io/${{ github.repository_owner }}/daorsagro/platform/document-service:$TAG backend/services/document-service/
+          docker tag ghcr.io/${{ github.repository_owner }}/daorsagro/platform/document-service:$TAG ghcr.io/${{ github.repository_owner }}/daorsagro/platform/document-service:latest
       - name: Login to GHCR
         uses: docker/login-action@v2
         with:
@@ -53,8 +64,19 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Push images
         run: |
-          docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/api-gateway:${{ github.sha }}
+          TAG=${{ github.sha }}
+          # Push API Gateway
+          docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/api-gateway:$TAG
           docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/api-gateway:latest
+          # Push Auth Service
+          docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/auth-service:$TAG
+          docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/auth-service:latest
+          # Push Financial Service
+          docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/financial-service:$TAG
+          docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/financial-service:latest
+          # Push Document Service
+          docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/document-service:$TAG
+          docker push ghcr.io/${{ github.repository_owner }}/daorsagro/platform/document-service:latest
 
   deploy-staging:
     needs: build
@@ -107,5 +129,14 @@ jobs:
         run: aws eks update-kubeconfig --region eu-west-1 --name daorsagro-production
       - name: Deploy to production
         run: helm upgrade --install daorsagro ./infrastructure/helm/daorsagro --namespace daorsagro --create-namespace --set environment=production --set image.tag=${{ github.sha }}
-      - name: Notify ArgoCD
-        run: kubectl apply -f argocd-app.yaml
+      - name: Notify Webhook
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+        run: |
+          if [ -n "$WEBHOOK_URL" ]; then
+            curl -X POST -H 'Content-Type: application/json' \
+              -d "{\"text\":\"Production deployment completed for commit ${{ github.sha }} in repo ${{ github.repository }}\"}" \
+              "$WEBHOOK_URL"
+          else
+            echo "No webhook URL provided, skipping notification."
+          fi
