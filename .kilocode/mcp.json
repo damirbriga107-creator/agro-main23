@@ -61,14 +61,9 @@
       ],
       "env": {
         "DEFAULT_MINIMUM_TOKENS": ""
-      }
-    },
-    "sequentialthinking": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-sequential-thinking"
-      ]
+      },
+      "disabled": true,
+      "alwaysAllow": []
     }
   }
 }
